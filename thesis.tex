@@ -1,5 +1,21 @@
 \documentclass{article}
 
+% Times font, math in Times Italic
+\usepackage{mathptmx}
+\usepackage{amsfonts}
+% Generate PDF links for ToC, cite, ref, etc.
+\usepackage{hyperref}
+
+% Prevent single first or last lines of a paragraph appearing alone at the top or bottom
+% of a page.
+\clubpenalty=10000
+\widowpenalty=10000
+
+% Number definitions, theorems, and lemmas with a single counter.
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}[theorem]{Definition}
+
 \title{Thesis}
 \author{Sebastian Paarmann}
 \date\today
@@ -8,21 +24,16 @@
 
 \maketitle
 
-\section{Test}
+\tableofcontents
 
-A short and simple paragraph. It consists of this sentence and the preceding one. Additionally, it has some math:
-\[
-	f(x) = x * 2
-\]
+\section{The Cluster Editing Problem}
 
-
-A second paragraph.
-
-A third paragraph.
-
-
-\newpage
-
-And even second page! With some extra text! How about some more text?
+A \emph{cluster} graph, also called \emph{transitive} graph, is a graph which consists
+only of disjoint cliques. The \textsc{Cluster Editing} problem asks to transform an input
+graph into such a cluster graph, using a minimal number of edge \emph{edits} (insertions
+and deletions). For the \textsc{Weighted Cluster Editing} problem, the input is a weighted
+graph (with weights for both edges and non-edges) with the weights representing the cost
+of inserting a non-edge or deleting an edge. The solution should then require minimal cost
+instead of minimal count of edits. Oops, a misspelt word!
 
 \end{document}
