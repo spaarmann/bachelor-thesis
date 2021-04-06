@@ -2,14 +2,40 @@
 
 % Times font, math in Times Italic
 \usepackage{mathptmx}
+\usepackage{mathtools}
 \usepackage{amsfonts}
 % Generate PDF links for ToC, cite, ref, etc.
 \usepackage{hyperref}
+
+% This somehow takes advantasge of pdftex features and magically make the document typeset nicer,
+% for example it's managed to resolve an underfull hbox warning on its own.
+\usepackage{microtype}
 
 % Prevent single first or last lines of a paragraph appearing alone at the top or bottom
 % of a page.
 \clubpenalty=10000
 \widowpenalty=10000
+
+% We get a bunch of underfull hboxes is the references, which seem hard to impossible to fix nicely,
+% so this silences them for now so they're not spamming the output.
+% TODO: Before actual submission, turn this off and try and fix any underfull hbox reported. If some
+% can't be fixed, that's not big deal either.
+\hbadness 10000
+
+% This declares \abs and \norm commands
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}%
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}%
+
+% Swap the definition of \abs* and \norm*, so that \abs
+% and \norm resizes the size of the brackets, and the 
+% starred version does not.
+\makeatletter
+\let\oldabs\abs
+\def\abs{\@ifstar{\oldabs}{\oldabs*}}
+%
+\let\oldnorm\norm
+\def\norm{\@ifstar{\oldnorm}{\oldnorm*}}
+\makeatother
 
 % Number definitions, theorems, and lemmas with a single counter.
 \newtheorem{theorem}{Theorem}[section]
@@ -26,14 +52,213 @@
 
 \tableofcontents
 
+\section{Introduction}
+
+TODO
+
+% TODO: The separation between "Introduction", "The Cluster Editing Problem", and "Previous Work"
+% needs some more thought; may not even want to have all 3.
+
 \section{The Cluster Editing Problem}
 
-A \emph{cluster} graph, also called \emph{transitive} graph, is a graph which consists
-only of disjoint cliques. The \textsc{Cluster Editing} problem asks to transform an input
-graph into such a cluster graph, using a minimal number of edge \emph{edits} (insertions
-and deletions). For the \textsc{Weighted Cluster Editing} problem, the input is a weighted
-graph (with weights for both edges and non-edges) with the weights representing the cost
-of inserting a non-edge or deleting an edge. The solution should then require minimal cost
-instead of minimal count of edits. Oops, a misspelt word!
+A \emph{cluster} graph, also called \emph{transitive} graph, is a graph which consists only of
+disjoint cliques. The \textsc{Cluster Editing} problem asks to transform an input graph into such a
+cluster graph, using a minimal number of edge \emph{edits} (insertions and deletions). For the
+\textsc{Weighted Cluster Editing} problem, the input is a weighted graph (with weights for both
+edges and non-edges) with the weights representing the cost of inserting a non-edge or deleting an
+edge. The optimal solution then has minimal cost instead of minimal count of edits. We will start by
+considering the unweighted problem, but eventually deal mostly with the weighted version.
+
+% TODO: This introduction also needs some more work, could be a bit more clear and we also need a
+% formal formulation of the problem somewhere (symmetric difference of edge sets etc.)
+% TODO: Many papers also directly formulate the problem as having $k$ as input, maybe mention/do
+% something with that? Use it ourself?
+
+% TODO: Motivation for the problem, practical applications
+
+First, some notation used throughout: A graph $G = (V, E)$ has a vertex set $V$ and edge set $E
+\subset \binom{V}{2}$. Graphs are simple graphs, i.e.\ they contain no self-loops or parallel edges.
+We abbreviate an edge or non-edge $\{u, v\} \in \binom{V}{2}$ as $uv$.  $N_G(v)$ is the (open)
+neighborhood of a vertex $v$ in $G$. Similarly, $N_G[v]$ is the closed neighborhood of~$v$, i.e.\
+$N_G(v) \cup \{v\}$. If it is clear which graph is meant, we may also just write $N(v)$ and $N[v]$.
+A weighted graph $G$ is characterized by a weight function $s\colon \binom{V}{2} \to \mathbb{Z}$. We
+consider $uv$ to be an edge if $s(uv) > 0$ and $uv$ to be a non-edge if $s(uv) \leq 0$.
+% TODO: Make sure all relevant notation is included here, and we only have notation here that we end
+% up actually using.
+
+\textsc{Cluster Editing} is NP-hard/complete(?).
+% TODO: Cite, APX-hardness, existing approximations(?)
+
+% TODO: fpt approaches and fpt-tractability, including how you keep increasing k etc.
+
+A very simple FPT algorithm is given by the observation that a graph $G = (V, E)$ is a cluster graph
+iff.\ there are no 3 vertices $v, u, w \in V$ with $uv, uw \in E, vw \notin E$. Such a set of
+vertices is called a \emph{conflict triple}. The problem can be solved by recursively searching for
+a conflict triple and branching into three cases: Add $vw$, remove $uv$, or remove $uw$. These are
+the only ways of resolving a conflict, and once there are no more conflicts, a solution can be
+returned. With an upper bound $k$ for the number of edits as described above, this gives a search
+tree of size $3^k$.
+
+% TODO: Image for a conflict, and its resolutions, I think
+
+% TODO: Should decide on consistent rules for using O(k) vs O(k + n + m) etc., and apply these to
+% existing text.
+
+\section{Previous Work}
+
+% TODO: There are still a few things missing from this:
+% - Improvements over time to problem kernels
+% - ILP formulations
+% - Whatever introduced that weird impractical 1.92^k algorithm
+% - Work after the golden ratio paper, including e.g. the paper by Hartung and Hoos, among others.
+
+Clustering problems in general have a very long history, so we will focus only on the specific
+\textsc{Cluster Editing} problem as formulated above. In 1999, Ben-Dor, Shamir, and Yakhini
+introduced the unweighted problem in order to perform clustering on gene expression patterns
+\cite{BenDor}. They provided a stochastic model for the corruption of the true clustering introduced
+by measurements and present an $O(n^2 log(n)^c)$ algorithm that reconstructs the true clustering
+with high probability, as well as a heuristic approach based on a similar idea. Many other
+approaches for clustering gene expression data had been proposed and investigated already at this
+time, see \cite{ShamirOverview} for an overview from 2001.
+
+In \cite{ShamirModifications} Shamir, Sharan, and Tsur investigated \textsc{Cluster Editing} as well
+as the related \textsc{Cluster Completion} (only edge insertions allowed) and \textsc{Cluster
+Deletion} (only edge deletions allowed) problems further. They showed that \textsc{Cluster
+Completion} can be solved in polynomial time, \textsc{Cluster Deletion} is NP-hard to approximate to
+within some constant factor, and, most relevant for us, \textsc{Cluster Editing} is NP-complete.
+Additionally they also considered variants of the problems with a fixed number of clusters as input,
+which we will not further consider. In \cite{Gramm}, Gramm et al.\ mention that the NP-completeness
+of \textsc{Cluster Editing} can already be derived from \cite{Krivanek}, published in 1986.
+
+Bansal, Blum, and Chawla independently researched a group of problems they call \textsc{Correlation
+Clustering} in \cite{Bansal}. In their formulation, "minimizing disagreements" between the input
+labelling and the output clustering is equivalent to the unweighted \textsc{Cluster Editing}
+problem, which they give a constant-factor approximation for. This result was improved on in 2005 by
+Charikar, Guruswami, and Wirth in \cite{Charikar}, who show the problem to be APX-hard and give an
+approximation with a constant factor of 4.
+
+In 2003 Gramm et al.\ gave initial results regarding fixed-parameter approaches for \textsc{Cluster
+Editing} specifically in \cite{Gramm}. Before that, in \cite{Cai}, Cai investigated fixed-parameter
+tractability of graph modification problems characterized by forbidden subgraphs in a more general
+sense, the results of which imply an $O(k^3 * \abs{G}^4)$ algorithm for \textsc{Cluster Editing}.
+Gramm et al.\ gave an $O(k^3)$ kernel for the problem, as well as a straightforward $O(k^3 +
+\abs{V}^3)$ fixed-parameter algorithm. Additionally they show a more advanced branching strategy
+that improves the search tree size to $O(2.27^k)$, leading to an $O(2.27^k + \abs{V}^3)$ algorithm.
+This approach was implemented in practice for the first time and empirically compared to an LP-based
+solver by Dehne et al.\ in 2006 \cite{Dehne}. They find that the $O(2.27^k)$ is indeed faster in
+practice than the simpler $O(k^3)$ branching.
+
+Another avenue of research was started in 2007 by Rahmann et al.\ with \cite{Rahmann}. This
+introduced the first fixed-parameter algorithm for the weighted version of the problem, along with
+several data reduction rules to speed it up. They also introduced two heuristic algorithms.
+
+Building on this, Böcker et al.\ published several papers in 2008: \cite{AnApproach},
+\cite{GoingWeighted}, and \cite{ExactAlgos}. In \cite{AnApproach} they introduce a variant of the
+refined branching strategy from \cite{Gramm} for the weighted problem, resulting in an $O(2.42^k)$
+algorithm. Most importantly, this is the first paper to introduce merging two vertices, which is an
+operation only possible on the weighted problem. As a result, with merging, Böcker et al.\ find the
+simpler $O(3^k)$ branching faster in practice than the refined branching strategy, largely due to
+the significant effect of merging. Merging is also the basis for a very simple $O(2^k)$ branching
+algorithm introduced in \cite{GoingWeighted} which means the fastest practical approach to solving the
+unweighted problem is now to transform it into a weighted instance and solve that.
+\cite{GoingWeighted} also immediately improves upon this with an $O(1.82^k)$ algorithm that is
+achieved by more carefully choosing which edge to branch on. This beats even the previous best
+theoretical runtime for the unweighted problem of $O(1.92^k)$. Lastly, in \cite{ExactAlgos}, Böcker
+et al.\ perform practical experiments with these algorithms, comparing them with a cut-and-branch
+based ILP implementation. They find both approaches to be competitive, with different performance
+characteristics. Notably, good data reduction rules make the FPT approach feasible even for graphs
+that require several thousand edge modifications, despite the worst-case running times.
+
+This basic approach was improved further in \cite[Böcker and Damaschke, 2011]{EvenFaster} and
+\cite[Böcker, 2012]{GoldenRatio}. First, a theorem introduced by Damaschke in \cite{BoundedDegree}
+concerning the structure of graphs in which no edge is part of three conflict triples, is used to
+improve the algorithm to $O(1.76^k)$. Then zero-edges (which will be discussed in more detail later)
+can be used to show additional structural properties, allowing even more efficient branching for an
+$O(1.62^k)$ search tree.
+
+\begin{thebibliography}{99}
+
+% TODO: It would probably be good to double-check all of these are in fact correct ^^'
+% TODO: And double-check the format too. Certainly a bunch of the abbreviation dots produce too-long
+% spaces :/
+% For now, these are just taken straight out of Zotero
+
+\bibitem{BenDor}
+A. Ben-Dor, R. Shamir, and Z. Yakhini, “Clustering Gene Expression Patterns,” Journal of
+Computational Biology, vol. 6, no. 3–4, pp. 281–297, Oct. 1999, doi: 10.1089/106652799318274.
+
+\bibitem{ShamirOverview}
+R. Shamir and R. Sharan, “Algorithmic Approaches to Clustering Gene Expression Data,” in Current
+Topics in Computational Biology, 2001, pp. 269–300.
+
+\bibitem{ShamirModifications}
+R. Shamir, R. Sharan, and D. Tsur, “Cluster graph modification problems,” Discrete Applied
+Mathematics, vol. 144, no. 1, pp. 173–182, Nov. 2004, doi: 10.1016/j.dam.2004.01.007.
+
+\bibitem{Krivanek}
+M. Křivánek and J. Morávek, “NP-hard problems in hierarchical-tree clustering,” Acta Informatica,
+vol. 23, no. 3, pp. 311–323, Jun. 1986, doi: 10.1007/BF00289116.
+
+\bibitem{Gramm}
+J. Gramm, J. Guo, F. Hüffner, and R. Niedermeier, “Graph-Modeled Data Clustering: Fixed-Parameter
+Algorithms for Clique Generation,” in Algorithms and Complexity, vol. 2653, R. Petreschi, G.
+Persiano, and R. Silvestri, Eds. Berlin, Heidelberg: Springer Berlin Heidelberg, 2003, pp. 108–119.
+
+\bibitem{Bansal}
+N. Bansal, A. Blum, and S. Chawla, “Correlation Clustering,” Machine Learning, vol. 56, no. 1,
+pp. 89–113, Jul. 2004, doi: 10.1023/B:MACH.0000033116.57574.95.
+
+\bibitem{Charikar}
+M. Charikar, V. Guruswami, and A. Wirth, “Clustering with qualitative information,” Journal of
+Computer and System Sciences, vol. 71, no. 3, pp. 360–383, Oct. 2005, doi:
+10.1016/j.jcss.2004.10.012.
+
+\bibitem{Cai}
+L. Cai, “Fixed-parameter tractability of graph modification problems for hereditary properties,”
+Information Processing Letters, vol. 58, no. 4, pp. 171–176, May 1996, doi:
+10.1016/0020-0190(96)00050-6.
+
+\bibitem{Dehne}
+F. Dehne, M. A. Langston, X. Luo, S. Pitre, P. Shaw, and Y. Zhang, “The Cluster Editing Problem:
+Implementations and Experiments,” in Parameterized and Exact Computation, Berlin, Heidelberg, 2006,
+pp. 13–24, doi: 10.1007/11847250\_2.
+
+\bibitem{Rahmann}
+S. Rahmann, T. Wittkop, J. Baumbach, M. Martin, A. Truß, and S. Böcker, “Exact and Heuristic
+Algorithms for Weighted Cluster Editing,” in Computational Systems Bioinformatics, University of
+California, San Diego, USA, Sep. 2007, pp. 391–401, doi: 10.1142/9781860948732\_0040.
+
+\bibitem{AnApproach}
+S. Böcker, S. Briesemeister, Q. A. Bui, and A. Truß, “A Fixed-Parameter Approach for Weighted
+Cluster Editing,” 2008, doi: 10.1142/9781848161092\_0023.
+
+\bibitem{GoingWeighted}
+S. Böcker, S. Briesemeister, Q. B. A. Bui, and A. Truss, “Going Weighted: Parameterized
+Algorithms for Cluster Editing,” in Combinatorial Optimization and Applications, Berlin, Heidelberg,
+2008, pp. 1–12, doi: 10.1007/978-3-540-85097-7\_1.
+
+% TODO: We mention this as being from 2008 in the text, should cite the actual version published
+% then probably.
+\bibitem{ExactAlgos}
+S. Böcker, S. Briesemeister, and G. W. Klau, “Exact Algorithms for Cluster Editing: Evaluation
+and Experiments,” Algorithmica, vol. 60, no. 2, pp. 316–334, Jun. 2011, doi:
+10.1007/s00453-009-9339-7.
+
+\bibitem{EvenFaster}
+S. Böcker and P. Damaschke, “Even faster parameterized cluster deletion and cluster editing,”
+Information Processing Letters, vol. 111, no. 14, pp. 717–721, Jul. 2011, doi:
+10.1016/j.ipl.2011.05.003.
+
+\bibitem{GoldenRatio}
+S. Böcker, “A golden ratio parameterized algorithm for Cluster Editing,” Journal of Discrete
+Algorithms, vol. 16, pp. 79–89, Oct. 2012, doi: 10.1016/j.jda.2012.04.005.
+
+\bibitem{BoundedDegree}
+P. Damaschke, “Bounded-Degree Techniques Accelerate Some Parameterized Graph Algorithms,” in
+Parameterized and Exact Computation, vol. 5917, J. Chen and F. V. Fomin, Eds. Berlin, Heidelberg:
+Springer Berlin Heidelberg, 2009, pp. 98–109.
+
+
+\end{thebibliography}
 
 \end{document}
