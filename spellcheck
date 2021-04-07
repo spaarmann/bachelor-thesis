@@ -1,2 +1,2 @@
 #!/usr/bin/env fish
-ispell thesis.tex
+ispell -t -T utf8 thesis.tex
