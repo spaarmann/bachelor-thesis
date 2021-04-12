@@ -7,9 +7,14 @@
 % Generate PDF links for ToC, cite, ref, etc.
 \usepackage{hyperref}
 
-% This somehow takes advantasge of pdftex features and magically make the document typeset nicer,
+% This somehow takes advantage of pdftex features and magically make the document typeset nicer,
 % for example it's managed to resolve an underfull hbox warning on its own.
 \usepackage{microtype}
+
+% To get nice numbered algorithm floats
+\usepackage{algorithm}
+% To actually typeset algorithms
+\usepackage{algpseudocode}
 
 % Prevent single first or last lines of a paragraph appearing alone at the top or bottom
 % of a page.
@@ -37,6 +42,8 @@
 \def\norm{\@ifstar{\oldnorm}{\oldnorm*}}
 \makeatother
 
+\newcommand{\todo}[1]{\paragraph{TODO} #1}
+
 % Number definitions, theorems, and lemmas with a single counter.
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{lemma}[theorem]{Lemma}
@@ -52,29 +59,26 @@
 
 \tableofcontents
 
+\todo Typesetting of "Infinity"
+
 \section{Introduction}
 
-TODO
-
-% TODO: The separation between "Introduction", "The Cluster Editing Problem", and "Previous Work"
-% needs some more thought; may not even want to have all 3.
-
-\section{The Cluster Editing Problem}
-
 A \emph{cluster} graph, also called \emph{transitive} graph, is a graph which consists only of
-disjoint cliques. The \textsc{Cluster Editing} problem asks to transform an input graph into such a
-cluster graph, using a minimal number of edge \emph{edits} (insertions and deletions). For the
-\textsc{Weighted Cluster Editing} problem, the input is a weighted graph (with weights for both
-edges and non-edges) with the weights representing the cost of inserting a non-edge or deleting an
-edge. The optimal solution then has minimal cost instead of minimal count of edits. We will start by
-considering the unweighted problem, but eventually deal mostly with the weighted version.
+disjoint cliques.  In the \textsc{Cluster Editing} problem, the input is an undirected graph $G$ and
+an integer $k \geq 0$, and the question is whether the $G$ can be made into a cluster graph using
+$k$ or less \emph{edge edits}. An edit is either inserting an edge or deleting an existing one. We
+also consider the \textsc{Weighted Cluster Editing} problem: The input has weights for each edge and
+non-edge, which are the deletion and insertion costs respectively. The question is then whether
+there is a solution with total edit costs $\leq k$.
 
-% TODO: This introduction also needs some more work, could be a bit more clear and we also need a
-% formal formulation of the problem somewhere (symmetric difference of edge sets etc.)
-% TODO: Many papers also directly formulate the problem as having $k$ as input, maybe mention/do
-% something with that? Use it ourself?
+\todo Problem of finding the optimal solution without having a $k$ given
 
-% TODO: Motivation for the problem, practical applications
+\todo This introduction needs some more work, could be a bit more clear and probably want a
+formal formulation of the problem somewhere (symmetric difference of edge sets etc.)
+
+\todo Motivation for the problem, practical applications
+
+\todo Should mention the PACE challenge somewhere here
 
 First, some notation used throughout: A graph $G = (V, E)$ has a vertex set $V$ and edge set $E
 \subset \binom{V}{2}$. Graphs are simple graphs, i.e.\ they contain no self-loops or parallel edges.
@@ -83,13 +87,15 @@ neighborhood of a vertex $v$ in $G$. Similarly, $N_G[v]$ is the closed neighborh
 $N_G(v) \cup \{v\}$. If it is clear which graph is meant, we may also just write $N(v)$ and $N[v]$.
 A weighted graph $G$ is characterized by a weight function $s\colon \binom{V}{2} \to \mathbb{Z}$. We
 consider $uv$ to be an edge if $s(uv) > 0$ and $uv$ to be a non-edge if $s(uv) \leq 0$.
-% TODO: Make sure all relevant notation is included here, and we only have notation here that we end
-% up actually using.
 
-\textsc{Cluster Editing} is NP-hard/complete(?).
-% TODO: Cite, APX-hardness, existing approximations(?)
+\todo Notation paragraph needs some cleanup; and at the end make sure this has everything relevant
+that's used and nothing that isn't.
 
-% TODO: fpt approaches and fpt-tractability, including how you keep increasing k etc.
+\textsc{Cluster Editing} is NP-complete
+\todo Cite, APX-hardness, existing approximations(?)
+
+\todo fpt approaches and fpt-tractability, including how you keep increasing k etc.
+\todo What a kernel is
 
 A very simple FPT algorithm is given by the observation that a graph $G = (V, E)$ is a cluster graph
 iff.\ there are no 3 vertices $v, u, w \in V$ with $uv, uw \in E, vw \notin E$. Such a set of
@@ -99,18 +105,25 @@ the only ways of resolving a conflict, and once there are no more conflicts, a s
 returned. With an upper bound $k$ for the number of edits as described above, this gives a search
 tree of size $3^k$.
 
-% TODO: Image for a conflict, and its resolutions, I think
+\todo Should this be here? Should it be somewhere else?
 
-% TODO: Should decide on consistent rules for using O(k) vs O(k + n + m) etc., and apply these to
-% existing text.
+\todo Image for a conflict, and its resolutions, maybe (in general some visualizations would be
+n ice)
+
+%todo Should decide on consistent rules for using $O(k)$ vs $O(k + n + m)$ etc., and apply these to
+%existing text.
 
 \section{Previous Work}
 
-% TODO: There are still a few things missing from this:
-% - Improvements over time to problem kernels
-% - ILP formulations
-% - Whatever introduced that weird impractical 1.92^k algorithm
-% - Work after the golden ratio paper, including e.g. the paper by Hartung and Hoos, among others.
+\todo There are still a few things missing from this: \begin{enumerate}
+	\item ILP formulations
+	\item The $1.92^k$ algorithm
+	\item Work after the golden ratio paper, including e.g.\ the paper by Hartung and Hoos, among
+		others.
+\end{enumerate}
+
+\todo Harmonize how the \ cites are integrated with the text; probably mostly just put them after
+names and ideas instead of doing "in [x]" etc.
 
 Clustering problems in general have a very long history, so we will focus only on the specific
 \textsc{Cluster Editing} problem as formulated above. In 1999, Ben-Dor, Shamir, and Yakhini
@@ -142,8 +155,8 @@ Editing} specifically in \cite{Gramm}. Before that, in \cite{Cai}, Cai investiga
 tractability of graph modification problems characterized by forbidden subgraphs in a more general
 sense, the results of which imply an $O(k^3 * \abs{G}^4)$ algorithm for \textsc{Cluster Editing}.
 Gramm et al.\ gave an $O(k^3)$ kernel for the problem, as well as a straightforward $O(k^3 +
-\abs{V}^3)$ fixed-parameter algorithm. Additionally they show a more advanced branching strategy
-that improves the search tree size to $O(2.27^k)$, leading to an $O(2.27^k + \abs{V}^3)$ algorithm.
+n^3)$ fixed-parameter algorithm. Additionally they show a more advanced branching strategy
+that improves the search tree size to $O(2.27^k)$, leading to an $O(2.27^k + n^3)$ algorithm.
 This approach was implemented in practice for the first time and empirically compared to an LP-based
 solver by Dehne et al.\ in 2006 \cite{Dehne}. They find that the $O(2.27^k)$ is indeed faster in
 practice than the simpler $O(k^3)$ branching.
@@ -176,12 +189,207 @@ improve the algorithm to $O(1.76^k)$. Then zero-edges (which will be discussed i
 can be used to show additional structural properties, allowing even more efficient branching for an
 $O(1.62^k)$ search tree.
 
-\begin{thebibliography}{99}
+In parallel multiple problem kernels for \textsc{Cluster Editing} have also been developed. Note
+that we discuss them here separetely only to make it easier to follow, in practice the work on
+kernels is often what makes the better algorithms possible: Better reduction rules introduced as
+part of a kernel allow constructing and proving a faster search tree algorithm. In fact, these are
+often developed as a single work. Such it is for the first kernel given by Gramm et al.\ in
+\cite{Gramm}, which has at most $2k^2 + k$ vertices and can be computed in $O(n^3)$ time.
 
-% TODO: It would probably be good to double-check all of these are in fact correct ^^'
-% TODO: And double-check the format too. Certainly a bunch of the abbreviation dots produce too-long
-% spaces :/
-% For now, these are just taken straight out of Zotero
+In \cite[2006]{Protti}, Protti, da Silva, and Szwarcfiter gave a kernel with at most $2k^2 + 4k$
+vertices, slightly worse than that off Gramm et al.\ but still $O(k^2)$. It is based on the modular
+decomposition of a graph and has the advantage of only requiring running time $O(n + m)$. In 2007,
+Fellows et al.\ introduced a "crown-type structural reduction rule" in \cite{Fellows} and show it
+can be used to construct a kernel with $6k$ vertices that can be computed in polynomial time.
+
+Based on both the ideas of the crown-type reduction and the concept of \emph{critical cliques},
+which had already been used for good effect in fixed-parameter approaches to other problems,
+Guo~\cite{Guo} presented first another $6k$ kernel with $O(n^3)$ runtime and immediately improved
+this to a kernel with at most $4k$ vertices computable in $O(nm^2)$ time.
+
+Lastly, in 2011, Chen and Meng \cite{ChenMeng} combined the critical cliques concept with the notion
+of an \emph{editing degree} of a vertex to give a $2k$ kernel which runs in $O(nm)$ time.
+
+\section{Our Implementation}
+
+\todo This is missing some attributions right now, most notably for the whole merging thing, but
+probably to some extent for other things too.
+
+\todo Should motivate merging more somewhere, setting to "forbidden" and "permanent" being the
+intuitive thing and merging just being a cooler version of the latter.
+
+\todo Revisit branching strategy to potentially be based on lowest-branching-number instead
+
+In this section we will describe the implementation of our solver in some detail. It is based on
+many techniques introduced by the papers mentioned above. Those are only briefly summarized there
+but we will give more detailed information about those we have implemented here.
+
+There are 4 parts of this section: We start off by describing the high-level structure of the
+solver, followed by a more in-depth look at the two basic modifying operations that are performed on
+the graph during execution of the algorithm. Next, we describe the reduction rules used, and finally
+some details on the practical implementation of the described algorithm, e.g.\ used data structures.
+
+\subsection{High-Level Overview}
+
+The solver consists of two main parts: The solver function, Algorithm~\ref{alg:solver}, that
+performs interleaved reduction and the branching strategy, calling itself recursively; and a
+\emph{driver}, Algorithm~\ref{alg:driver} that splits the input graph into its connected components,
+performs some initial reduction and conversion to a weighted instance, and then calls the recursive
+solver function with increasing parameter $k$ until a solution is found. 
+
+The reductions are split into several categories. There is the initial step of taking an
+unweighted instance and turning it into a reduced weighted instance. A set of parameter-independent
+reduction rules can also be applied directly after this, before the main search-tree algorithm.
+These parameter-independent rules are also applied interleaved during the search. And finally, any
+reductions that depend on having a maximum cost parameter $k$ can be applied only once the search
+has started.
+
+During the recursive search, we must track the current graph, which is modified for each recursive
+step, the current value for $k$ as well as the set of edits done so far in the current branch.
+Because we modify the graph not just by inserting and deleting edges in the course of the algorithm,
+but also by merging vertices (which effectively removes a vertex; see below for details), we also
+need to keep track of which vertices in the current graph correspond to which vertices of the
+original graph. One can either keep tracking edits throughout the branching search in terms of the
+original graph, or reconstruct the edit set at the end based on the final graph and the information
+about how vertices correspond. We have chosen to do the former.
+\todo Motivate this by Experiment1
+
+\todo These algorithms kind of swing between by-ref and by-value arguments as they want to, should
+formulate this a bit more nicely
+
+\begin{algorithm}{Driver}
+\caption{Driver}
+\label{alg:driver}
+\begin{algorithmic}
+
+\Function{ComputeOptimalClusterEditing}{$G: Graph$}
+	\State $edits \gets \emptyset$
+	\ForAll{$comp \in \Call{Components}{G}$}
+		\State $instance \gets \Call{MakeWeightedInstance}{comp}$
+		\State $lb1 \gets \Call{InitialReduction}{instance}$
+		\State $lb2 \gets \Call{LowerBound}{instance}$
+		\State $k \gets \Call{Max}{lb1, lb2}$
+		\Repeat
+			\State $solution = \Call{SolveClusterEditing}{instance, k, \emptyset}$
+			\State $k \gets k + 1$
+		\Until{$solution \neq \emptyset$}
+
+		\State $edits \gets edits \cup solution$
+	\EndFor
+	\State \Return $edits$
+\EndFunction
+
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\caption{Recursive Solver}
+\label{alg:solver}
+\begin{algorithmic}
+
+\Function{SolveClusterEditing}{$instance, k, edits$}
+	\If{$k < 0 \lor k < \Call{LowerBound}{instance}$}
+		\State \Return $\emptyset$
+	\EndIf
+
+	\State $\Call{Reduction}{instance, k}$
+
+	\If{$k < 0 \lor k < \Call{LowerBound}{instance}$}
+		\State \Return $\emptyset$
+	\EndIf
+
+	\If{$\neg \Call{HasConflictTriple}{instance}$}
+		\State \Return $edits$
+	\EndIf
+
+	\State $(v, u, w) \gets \Call{GetConflictTriple}{instance}$
+	\\
+	\State $delInstance \gets \Call{Clone}{instance}$
+	\State $delK \gets k$
+	\State $delEdits \gets \Call{ForbidEdge}{delInstance, delK, uv, edits}$
+	\State $delSolution \gets \Call{SolveClusterEditing}{delInstance, delK, delEdits}$
+
+	\If{$delSolution \neq \emptyset$}
+		\State \Return $delSolution$
+	\EndIf
+	\\
+	\State $mergeEdits \gets \Call{MergeEdge}{instance, k, uv, edits}$
+	\State $mergeSolution \gets \Call{SolveClusterEditing}{instance, k, mergeEdits}$
+	\State \Return $mergeSolution$
+\EndFunction
+
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Basic Operations}
+
+Both the reduction rules and the branching algorithm itself only need to perform two kinds of
+modifications on the graph: Setting an edge to forbidden, which includes deleting the edge if it
+currently exists in the graph; and merging two vertices, which implies setting the edge between them
+to permanent but also reduces the size of the remaining graph in the process and can result in
+multiple other edits in addition to inserting the edge between the vertices.
+
+% TODO: Might be good to explain the part of tracking edges in terms of original vertices, so that
+% even a Delete(u, v) edit can actually produce multiple edits a bit more. Only want to do that once
+% Experiment1 is finished and confirms we do keep doing it like that :)
+
+\paragraph{Forbidding} Of the two, forbidding an edge is the much simpler operation. If $uv$
+currently exists, deleting it will generate cost. We thus reduce $k$ by $\max\{s(uv), 0\}$. If $s(uv)
+> 0$, we record the edit(s) from removing the edge. We then set $s(uv) = -Infinity$ to mark it as
+forbidden and prevent it from being reintroduced later.
+
+\paragraph{Merging} Merging two vertices $u$ and $v$ is more complicated. Conceptually, we introduce
+a new vertex $u'$ and insert it into the graph while removing $u$ and $v$. Merged vertices are
+considered to have a permanent edge between them (we can't later split them apart again), so if
+$s(uv) \leq 0$, we record the edit(s) from inserting the edge. This also generates cost, so reduce
+$k$ by $\max\{-s(uv), 0\}$. Then, for all $w \in V \setminus \{u, v\}$, we set $s(u'w) = s(uw) +
+s(vw)$.
+
+It is possible that before the merge $uw$ existed and $vw$ did not, or vice-versa. In that case,
+this merge procedure will also effectively insert or delete one of these edges, depending on their
+weights. Any edits resulting from such a case are also recorded as edit, and reduce $k$
+appropriately. Note however that while \emph{primary} edits (forbidding or merging $uv$) result in
+$uv$s new status being permanent and never changing again (in this part of the search tree), this
+kind of \emph{secondary} edit occurring as a side-effect of merging can be changed again later in
+the algorithm, by editing $u'w$.
+
+An additional complication is the fact that the described merging procedure can create edges with
+weight 0, if $s(uw) = -s(vw)$.
+% TODO: Finish discussing zero-edges
+
+\begin{enumerate}
+	\item Merge two vertices
+	\item Forbid an edge (and delete it if it exists)
+\end{enumerate}
+
+\subsection{Reduction Rules}
+
+\paragraph{Critical Cliques} One can obtain an equivalent weighted instance from an unweighted one,
+by simply setting $s(uv) = 1$ for all $uv \in E$ and $s(uv) = -1$ for all $uv \notin E$. We use a
+slightly more complex procedure that can already reduce the graph while making it weighted, based on
+the notion of \emph{critical cliques} 
+
+
+\begin{enumerate}
+	\item Initial Critical Clique Reduction
+	\item Parameter-independent reduction: Rules 1--5
+	\item Induced Cost reduction
+\end{enumerate}
+
+\subsection{Implementation Details}
+
+\todo Order tbd
+\begin{enumerate}
+	\item Graph data structure
+	\item Conflict Tracking
+	\item Oplogs
+	\item Something interesting I'm forgetting ?
+\end{enumerate}
+
+\todo Clean the references up a bit, and double-check years etc. Right now these are just whatever
+Zotero produced on its own, which is useful to get started quickly. (Clean up formatting too)
+
+\begin{thebibliography}{99}
 
 \bibitem{BenDor}
 A. Ben-Dor, R. Shamir, and Z. Yakhini, “Clustering Gene Expression Patterns,” Journal of
@@ -258,6 +466,23 @@ P. Damaschke, “Bounded-Degree Techniques Accelerate Some Parameterized Graph A
 Parameterized and Exact Computation, vol. 5917, J. Chen and F. V. Fomin, Eds. Berlin, Heidelberg:
 Springer Berlin Heidelberg, 2009, pp. 98–109.
 
+\bibitem{Protti}
+F. Protti, M. D. da Silva, and J. L. Szwarcfiter, “Applying Modular Decomposition to
+Parameterized Bicluster Editing,” in Parameterized and Exact Computation, Sep. 2006, pp. 1–12, doi:
+10.1007/11847250\_1.
+
+\bibitem{Fellows}
+M. Fellows, M. Langston, F. Rosamond, and P. Shaw, “Efficient Parameterized Preprocessing for
+Cluster Editing,” in Fundamentals of Computation Theory, vol. 4639, E. Csuhaj-Varjú and Z. Ésik,
+Eds. Berlin, Heidelberg: Springer Berlin Heidelberg, 2007, pp. 312–321.
+
+\bibitem{Guo}
+J. Guo, “A more effective linear kernelization for cluster editing,” Theoretical
+Computer Science, vol. 410, no. 8, pp. 718–726, Mar. 2009, doi: 10.1016/j.tcs.2008.10.021.
+
+\bibitem{ChenMeng}
+J. Chen and J. Meng, “A 2k kernel for the cluster editing problem,” Journal of Computer and
+System Sciences, vol. 78, no. 1, pp. 211–220, Jan. 2012, doi: 10.1016/j.jcss.2011.04.001.
 
 \end{thebibliography}
 
