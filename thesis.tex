@@ -16,6 +16,9 @@
 % To actually typeset algorithms
 \usepackage{algpseudocode}
 
+% Theorem styles
+\usepackage{amsthm}
+
 % Prevent single first or last lines of a paragraph appearing alone at the top or bottom
 % of a page.
 \clubpenalty=10000
@@ -47,6 +50,7 @@
 % Number definitions, theorems, and lemmas with a single counter.
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
 \newtheorem{definition}[theorem]{Definition}
 
 \title{Thesis}
@@ -90,6 +94,7 @@ consider $uv$ to be an edge if $s(uv) > 0$ and $uv$ to be a non-edge if $s(uv) \
 
 \todo Notation paragraph needs some cleanup; and at the end make sure this has everything relevant
 that's used and nothing that isn't.
+\todo More notation: Induced graphs, symmetric differences, $N^2(v)$
 
 \textsc{Cluster Editing} is NP-complete
 \todo Cite, APX-hardness, existing approximations(?)
@@ -108,7 +113,7 @@ tree of size $3^k$.
 \todo Should this be here? Should it be somewhere else?
 
 \todo Image for a conflict, and its resolutions, maybe (in general some visualizations would be
-n ice)
+nice)
 
 %todo Should decide on consistent rules for using $O(k)$ vs $O(k + n + m)$ etc., and apply these to
 %existing text.
@@ -367,12 +372,125 @@ weight 0, if $s(uw) = -s(vw)$.
 \paragraph{Critical Cliques} One can obtain an equivalent weighted instance from an unweighted one,
 by simply setting $s(uv) = 1$ for all $uv \in E$ and $s(uv) = -1$ for all $uv \notin E$. We use a
 slightly more complex procedure that can already reduce the graph while making it weighted, based on
-the notion of \emph{critical cliques} 
+the notion of \emph{critical cliques}.
 
+\begin{definition}
+	A \emph{critical clique} $K$ is an induced clique in $G$ where all vertices of $K$ have the same
+	set of neighbors, and $K$ is maximal under this property. 
+\end{definition}
+
+An optimal cluster editing never splits a critical clique, i.e. every critical clique $K$ of the
+input graph will be contained in a single cluster for any optimal solution~\cite{Guo}. Guo uses this
+observation and more to construct a $4k$ kernel for the unweighted cluster editing problem. We can
+take advantage of the technique of merging vertices instead: Since all vertices in a critical clique
+end up in the same cluster, we can merge every critical clique into a single vertex, which will
+transform the unweighted input into an integer-weighted graph. The resulting graph has at most
+$4k_{opt}$ vertices, providing a simple lower bound for the parameter at the start of the
+algorithm~\cite{GoingWeighted}\cite{Guo}.
+
+Finding the critical cliques is possible in $O(n + m)$ time. In practice we implemented a simpler
+$O(n^2)$ algorithm: Until all vertices have been assigned to a critical clique, choose one
+unassigned vertex to put in a new critical clique, and add every other unassigned vertex with the
+same closed neighborhood to the same critical clique. Our implementation time was constrained and
+this reduction is only ever executed once for every connected component of the input graph, so we
+focused our efforts on parts that have a more significant effect on total runtime instead of
+implementing the more complicated $O(n + m)$ algorithm.
+
+\todo Effectiveness of critical clique reduction (this is very easy to measure)
+
+\paragraph{Parameter-independent reduction} As described above, parameter-independent reduction can
+be applied once as reduction at the very start of the algorithm, but also during the search tree
+algorithm: After some branches in the search tree have been taken, more reduction operations may
+become applicable in the context of the current branch. Concretely, we implemented reduction
+rules~1--5 as introduced by Böcker et al.~\cite{GoingWeighted}. We repeat the rules here along with
+notes about their implementation, but omit full proofs of correctness and runtime.
+
+\todo images 
+
+\subparagraph{Rule 1} A non-edge $uv$ with $s(uv) < 0$ can be forbidden if
+\[
+	\abs{s(uv)} \geq \sum_{w \in N(u)} s(uw).
+\]
+
+Intuitively, if adding $uv$ is more expensive than even isolating $u$ completely would be, it never
+makes sense to insert $uv$.
+
+\subparagraph{Rule 2} Vertices $u, v$ of an edge $uv$ can be merged if
+\[
+	s(uv) \geq \sum_{w \in V \setminus \{u, v\}} \abs{s(uw)}.
+\]
+
+Intuitively, if removing $uv$ is more expensive than editing every single other (non-)edge incident
+with $u$, it never makes sense to remove $uv$.
+
+\subparagraph{Rule 3} Vertices $u, v$ of an edge $uv$ can be merged if
+\[
+	s(uv) \geq \sum_{w \in N(u) \setminus \{v\}} s(uw) + \sum_{w \in N(v) \setminus \{u\}} s(vw).
+\]
+
+Intuitively, if removing $uv$ is more expensive than isolating $u$ and $v$ completely (except from
+each other), it never makes sense to remove $uv$.
+
+We collectively call rules 1--3 the "fast parameter-indepdendent reduction rules." Böcker et al.\
+apply these rules in every node of the search tree~\cite{GoingWeighted}. In our testing we found it
+to be better to apply even these faster reductions only at some interval.
+\todo Reference experimental results section, or wherever we actually demonstrate this effect
+
+These rules can be applied most efficiently by combining all of them into a single pass. Our
+implementation is very similar to the strategy described by Böcker et al.~\cite{GoingWeighted} for
+achieving $O(n^3)$ runtime: For every pair $uv$ we calculate and store
+\[
+	r_1(uv) \gets -s(uv) - \sum_{w \in N(u)} s(uw),
+\]
+\[
+	r_2(uv) \gets s(uv) - \sum_{w \in V \setminus \{u, v\}} \abs{s(uw)},
+\]
+\[
+	r_3(uv) \gets s(uv) - \sum_{w \in N(u) \setminus \{v\}} s(uw) + \sum_{w \in N(v) \setminus
+	\{u\}} s(vw).
+\]
+
+Note that rule 3 is symmetric, i.e. the order of $u$ and $v$ does not matter, and we can avoid
+calculating the same value twice. Rules 1 and 2 however are not symmetric, so the order does matter
+and a value is calculated for both orders.
+
+Now the $r$ values tell us for which pairs the respective rule can be applied: $uv$ can be forbidden
+if $r_1(uv) \geq 0$ and $uv$ can be merged if $r_2(uv) \geq 0$ or $r_3(uv) \geq 0$. We first
+construct a list of the entries for which this applies. Then we repeatedly take the next element
+from this list and apply the corresponding reduction, until no elements are left. Of course both
+forbidding and merging an edge can have effects on the applicability of the rules on other edges. By
+analyzing which values can change by a given reduction and how, we construct a routine that can directly
+apply the change to all other affected $r$ values, without having to recompute any entirely. Note
+that these updates can lead to both entries being removed from and entries being added to the list
+of values $\geq 0$. For the full update procedure we refer to the source code associated with this
+thesis; there it is implemented and also described and justified in some detail.
+\todo Should this be described in full detail here instead?
+
+\subparagraph{Rule 4} Let $k_C$ be the min-cut value of $G[C]$, for $C \subset V$. $C$ can be merged
+if
+\[
+	k_C \geq \sum_{u,v \in C, s(uv) \leq 0} \abs{s(uv)} + \sum_{u \in C, v \in V \setminus C, s(uv)
+	> 0} s(uv).
+\]
+
+Correctness is again easy to see: If the cheapest way of separating $C$ into two (or more) clusters in the
+solution (i.e. the min-cut value of $G[C]$) is more expensive than turning $C$ into an isolated
+clique (adding any missing edges within $C$, removing any edges from $C$ to $V \setminus C$), then
+we know an optimal solution will not split $C$ into two (or more) clusters and can thus merge all
+vertices of $C$ into one.
+
+The more difficult part of applying this rule is deciding on which subsets $C$ to check and possibly
+apply it for. Trying all possible subsets would be much too slow in even reasonably sized graphs.
+Böcker et al.\ describe a method of iteratively constructing subsets to test that can be executed
+quickly while still giving reasonable results: Start with a single vertex $C = \{u\}$ that maximizes
+$\sum_{v \in V \setminus \{u\}} \abs{s(uv)}$. Then repeatedly add a vertex $w \in V \setminus C$
+that has maximum connectivity in the set, i.e.\ one that maximizes~$\sum_{v \in C} s(vw)$. Whenever
+the connectivity of the vertex $w$ added is at least twice as large as that of the next-best vertex,
+try to apply rule 4 with the current $C$. Stop if the added vertex $w$ has more edges to vertices in
+$V \setminus C$ than to vertices in $C$.
 
 \begin{enumerate}
-	\item Initial Critical Clique Reduction
-	\item Parameter-independent reduction: Rules 1--5
+	\item Rule 5
 	\item Induced Cost reduction
 \end{enumerate}
 
@@ -385,6 +503,11 @@ the notion of \emph{critical cliques}
 	\item Oplogs
 	\item Something interesting I'm forgetting ?
 \end{enumerate}
+
+
+\section{Experimental results}
+
+\todo
 
 \todo Clean the references up a bit, and double-check years etc. Right now these are just whatever
 Zotero produced on its own, which is useful to get started quickly. (Clean up formatting too)
