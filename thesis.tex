@@ -1,6 +1,8 @@
 \documentclass{article}
 
 % Times font, math in Times Italic
+% TODO: Not actually very happy with some of the typesetting, especially around sums in equations
+% TODO: Also, some equation blocks should ideally align on their equals or something
 \usepackage{mathptmx}
 \usepackage{mathtools}
 \usepackage{amsfonts}
@@ -85,7 +87,7 @@ formal formulation of the problem somewhere (symmetric difference of edge sets e
 \todo Should mention the PACE challenge somewhere here
 
 First, some notation used throughout: A graph $G = (V, E)$ has a vertex set $V$ and edge set $E
-\subset \binom{V}{2}$. Graphs are simple graphs, i.e.\ they contain no self-loops or parallel edges.
+\subseteq \binom{V}{2}$. Graphs are simple graphs, i.e.\ they contain no self-loops or parallel edges.
 We abbreviate an edge or non-edge $\{u, v\} \in \binom{V}{2}$ as $uv$.  $N_G(v)$ is the (open)
 neighborhood of a vertex $v$ in $G$. Similarly, $N_G[v]$ is the closed neighborhood of~$v$, i.e.\
 $N_G(v) \cup \{v\}$. If it is clear which graph is meant, we may also just write $N(v)$ and $N[v]$.
@@ -407,7 +409,8 @@ notes about their implementation, but omit full proofs of correctness and runtim
 
 \todo images 
 
-\subparagraph{Rule 1} A non-edge $uv$ with $s(uv) < 0$ can be forbidden if
+\subparagraph{Rule 1} \emph{(heavy non-edge rule)} A non-edge $uv$ with $s(uv) < 0$ can be forbidden
+if
 \[
 	\abs{s(uv)} \geq \sum_{w \in N(u)} s(uw).
 \]
@@ -415,15 +418,17 @@ notes about their implementation, but omit full proofs of correctness and runtim
 Intuitively, if adding $uv$ is more expensive than even isolating $u$ completely would be, it never
 makes sense to insert $uv$.
 
-\subparagraph{Rule 2} Vertices $u, v$ of an edge $uv$ can be merged if
+\subparagraph{Rule 2} \emph{(heavy edge rule, single end)} Vertices $u, v$ of an edge $uv$ can be
+merged if
 \[
 	s(uv) \geq \sum_{w \in V \setminus \{u, v\}} \abs{s(uw)}.
 \]
 
-Intuitively, if removing $uv$ is more expensive than editing every single other (non-)edge incident
-with $u$, it never makes sense to remove $uv$.
+Intuitively, if removing $uv$ is more expensive than editing every single other edge and non-edge
+incident with $u$, it never makes sense to remove $uv$.
 
-\subparagraph{Rule 3} Vertices $u, v$ of an edge $uv$ can be merged if
+\subparagraph{Rule 3} \emph{(heave edge rule, both ends)} Vertices $u, v$ of an edge $uv$ can be
+merged if
 \[
 	s(uv) \geq \sum_{w \in N(u) \setminus \{v\}} s(uw) + \sum_{w \in N(v) \setminus \{u\}} s(vw).
 \]
@@ -466,18 +471,18 @@ of values $\geq 0$. For the full update procedure we refer to the source code as
 thesis; there it is implemented and also described and justified in some detail.
 \todo Should this be described in full detail here instead?
 
-\subparagraph{Rule 4} Let $k_C$ be the min-cut value of $G[C]$, for $C \subset V$. $C$ can be merged
-if
+\subparagraph{Rule 4} \emph{(almost clique rule)} Let $k_C$ be the min-cut value of $G[C]$, for $C
+\subseteq V$. $C$ can be merged if
 \[
-	k_C \geq \sum_{u,v \in C, s(uv) \leq 0} \abs{s(uv)} + \sum_{u \in C, v \in V \setminus C, s(uv)
-	> 0} s(uv).
+	k_C \geq \sum_{u,v \in C, s(uv) \leq 0} \abs{s(uv)}
+		+ \sum_{u \in C, v \in V \setminus C, s(uv) > 0} s(uv).
 \]
 
-Correctness is again easy to see: If the cheapest way of separating $C$ into two (or more) clusters in the
-solution (i.e. the min-cut value of $G[C]$) is more expensive than turning $C$ into an isolated
-clique (adding any missing edges within $C$, removing any edges from $C$ to $V \setminus C$), then
-we know an optimal solution will not split $C$ into two (or more) clusters and can thus merge all
-vertices of $C$ into one.
+Correctness is again easy to see: If the cheapest way of separating $C$ into two (or more) clusters
+in the solution (i.e. the min-cut value of $G[C]$) is more expensive than turning $C$ into an
+isolated clique (adding any missing edges within $C$, removing any edges from $C$ to $V \setminus
+C$), then we know an optimal solution will not split $C$ into two (or more) clusters and can thus
+merge all vertices of $C$ into one.
 
 The more difficult part of applying this rule is deciding on which subsets $C$ to check and possibly
 apply it for. Trying all possible subsets would be much too slow in even reasonably sized graphs.
@@ -489,12 +494,98 @@ the connectivity of the vertex $w$ added is at least twice as large as that of t
 try to apply rule 4 with the current $C$. Stop if the added vertex $w$ has more edges to vertices in
 $V \setminus C$ than to vertices in $C$.
 
-\begin{enumerate}
-	\item Rule 5
-	\item Induced Cost reduction
-\end{enumerate}
+Now we come to the most complicated of the parameter-independent reduction rules, rule 5. First some
+definitions: For any $U \subseteq V$ define $s(v, U) := \sum_{u \in U} s(v, u)$. For an edge $uv$,
+define the \emph{exclusive neighborhoods} of $u$ and $v$ as
+\[
+	N_u := N(u) \setminus (N(v) \cup \{v\}) \text{ and } N_v := N(v) \setminus (N(u) \cup \{u\})
+\]
+and set $W := V - (N_u \cup N_v \cup \{u, v\})$ as well as $\Delta_u := s(u, N_u) - s(u, N_v)$,
+$\Delta_v := s(v, N_v) - s(v, N_u)$. With this we can specify rule 5:
 
-\subsection{Implementation Details}
+\subparagraph{Rule 5} \emph{(similar neighborhood)} Merge $uv$ if
+\[
+	s(uv) \geq \max_{C_u, C_v} \min\{s(v, C_v) - s(v, C_u) + \Delta_v, s(u, C_u) - s(u, C_v) +
+	\Delta_u\}
+\]
+with the maximum running over all $C_u, C_v \subseteq W$ with $C_u \cap C_v = \emptyset$.
+
+The correctness of this rule is not as obvious as for rules 1--4. Böcker et al.~\cite{GoingWeighted}
+give a proof. Roughly speaking, one can show an upper bound for $s(uv)$ if $u$ and $v$ were to be in
+different clusters in an optimal solution based on analyzing the neighborhoods of $u$ and $v$. If
+$s(uv)$ exceeds that upper bound, we know an optimal solution has $u$ and $v$ in the same cluster
+and can merge them.
+
+Here too performant implementation is of some concern, mostly it is not obvious how to efficiently
+calculate the maximum running over all disjoint subsets of $W$. Böcker et a.\ describe a dynamic
+programming approach for calculating it in $O(\abs{W} Z)$ time and $O(Z)$ space for $Z := \sum_{w
+\in W} (s(uw) + s(vw))$ which we have implemented and will go into some detail for.
+
+\todo Details of dyn prog for rule 5
+
+As rules 4 and 5 are more expensive to compute, we apply them on an even larger interval than that
+of rules 1--3.
+
+\paragraph{Parameter-dependent reduction} The last category of reduction rules is those requiring a
+parameter $k$ to be applied. That means we can only use them once the branching search has started,
+and then interleave them with the branching strategy like the other rules.
+
+% todo: "main" implies there is at least something else :)
+
+Our main parameter-dependent reduction is the \emph{induced cost} reduction, also introduced by
+Böcker et al.~\cite{AnApproach}. The idea is relatively simple: For each pair $uv$ we can quickly
+calculate a lower bound on the costs that setting them to forbidden or merging them will incur. If
+we see that we cannot afford forbidding them anymore, we can merge them now, and vice-versa. More
+specifically, define $icf(uv)$ and $icp(uv)$, the \emph{induced cost of forbidding} $uv$ and the
+\emph{induced cost of setting $uv$ permanent}, as:
+
+\[
+	icf(uv) = \sum_{w \in N(u) \cap N(v)} \min\{s(uw), s(vw)\}
+\]
+\[
+	icp(uv) = \sum_{w \in N(u) \Delta N(v)} \min\{\abs{s(uw)}, \abs{s(vw)}\}
+\]
+
+These definitions are readily apparent: Forbidding $uv$ requires that at some point all common
+neighbors of $u$ and $v$ must be separated from either $u$ or $v$. Marking $uv$ as permanent (which,
+in our case, would mean immediately merging it) requires that all non-common neighbors of $u$ and
+$v$ must at some point either be connected to the one they are not a neighbor of, or disconnected
+from the one they are a neighbor of. These already provide lower bounds which we can make slightly
+better by also including the cost of editing $uv$ itself (forbidding it generates cost if it's not
+present, etc.). This leads to the following rules:
+
+\begin{itemize}
+	\item For $u, v \in V$ where $icf(uv) + \max\{0, s(uv)\} > k$: Merge $u$ and $v$.
+	\item For $u, v \in V$ where $icp(uv) + \max\{0, -s(uv)\} > k$: Forbid $uv$.
+\end{itemize}
+
+This is already rather effective, but the better we can make the lower bound, the more effective the
+reduction becomes. In the next section we will describe a lower bound $b(G, uv)$ that completely
+ignores all edges $uw$ and $vw$ for all $w \in V \setminus \{u, v\}$ in its computation. It can then
+be safely added on to the previous bounds, resulting in $icf(uv) + \max\{0, s(uv)\} + b(G, uv) > k$
+and $icp(uv) + \max\{0, -s(uv)\} + b(G, uv) > k$ as tests. This improved variant is significantly
+better than the less tight lower bound, even though it requires calculating this lower bound for
+each pair.
+
+\subsection{Lower Bounds}
+
+Computing lower bounds on the cost of a solution for the remaining problem provides an effective way
+to cull parts of the search tree early. To this end we calculate a lower bound $b(G)$ in every
+search tree node and discard the branch if $b(G) > k$.
+
+We use a very simple lower bound, also described by Böcker et al.~\cite{ExactAlgos}: For a set of
+edge-disjoint conflict triples $CT$, $\sum_{vuw \in CT} \min\{s(uv), s(uw), -s(vw)\}$ is clearly a
+lower bound on the cost of the whole graph. Calculating an \emph{optimal} $CT$, i.e.\ one that
+maximizes this sum, is expensive but just greedily constructing a set still produces a reasonable
+bound (in practice we actually maintain such a list throughout the algorithm instead of constructing
+one on demand, more details are in section~\ref{ImplDetails}.
+
+As mentioned above, we also have use for $b(G, xy)$, a lower bound that entirely ignores $x$ and $y$
+in its computation. In principle this could be a completely separate computation, but for simplicity
+and performance reasons, we use the same set $CT$ as for $b(G)$ but ignore all conflict triples $vuw$
+where any of $v$, $u$, $w$ are equal to $x$ or $y$ when calculating the sum.
+
+\subsection{Implementation Details} \label {ImplDetails}
 
 \todo Order tbd
 \begin{enumerate}
