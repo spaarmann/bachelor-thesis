@@ -75,7 +75,7 @@ an integer $k \geq 0$, and the question is whether the $G$ can be made into a cl
 $k$ or less \emph{edge edits}. An edit is either inserting an edge or deleting an existing one. We
 also consider the \textsc{Weighted Cluster Editing} problem: The input has weights for each edge and
 non-edge, which are the deletion and insertion costs respectively. The question is then whether
-there is a solution with total edit costs $\leq k$.
+there is a solution with total edit costs at most $k$.
 
 \todo Problem of finding the optimal solution without having a $k$ given
 
@@ -87,12 +87,13 @@ formal formulation of the problem somewhere (symmetric difference of edge sets e
 \todo Should mention the PACE challenge somewhere here
 
 First, some notation used throughout: A graph $G = (V, E)$ has a vertex set $V$ and edge set $E
-\subseteq \binom{V}{2}$. Graphs are simple graphs, i.e.\ they contain no self-loops or parallel edges.
-We abbreviate an edge or non-edge $\{u, v\} \in \binom{V}{2}$ as $uv$.  $N_G(v)$ is the (open)
-neighborhood of a vertex $v$ in $G$. Similarly, $N_G[v]$ is the closed neighborhood of~$v$, i.e.\
-$N_G(v) \cup \{v\}$. If it is clear which graph is meant, we may also just write $N(v)$ and $N[v]$.
-A weighted graph $G$ is characterized by a weight function $s\colon \binom{V}{2} \to \mathbb{Z}$. We
-consider $uv$ to be an edge if $s(uv) > 0$ and $uv$ to be a non-edge if $s(uv) \leq 0$.
+\subseteq \binom{V}{2}$. Graphs are simple graphs, i.e.\ they contain no self-loops or parallel
+edges.  We abbreviate an edge or non-edge $\{u, v\} \in \binom{V}{2}$ as $uv$. We denote the (open)
+neighborhood of a vertex $v$ in $G$ as $N_G(v)$. Similarly, $N_G[v]$ is the closed neighborhood
+of~$v$, i.e.\ $N_G(v) \cup \{v\}$. If it is clear which graph is meant, we may also just write
+$N(v)$ and $N[v]$.  A weighted graph $G$ is characterized by a weight function $s\colon \binom{V}{2}
+\to \mathbb{Z}$. We consider $uv$ to be an edge if $s(uv) > 0$ and $uv$ to be a non-edge if $s(uv)
+\leq 0$.
 
 \todo Notation paragraph needs some cleanup; and at the end make sure this has everything relevant
 that's used and nothing that isn't.
@@ -105,10 +106,10 @@ that's used and nothing that isn't.
 \todo What a kernel is
 
 A very simple FPT algorithm is given by the observation that a graph $G = (V, E)$ is a cluster graph
-iff.\ there are no 3 vertices $v, u, w \in V$ with $uv, uw \in E, vw \notin E$. Such a set of
-vertices is called a \emph{conflict triple}. The problem can be solved by recursively searching for
-a conflict triple and branching into three cases: Add $vw$, remove $uv$, or remove $uw$. These are
-the only ways of resolving a conflict, and once there are no more conflicts, a solution can be
+if and only if there is no \emph{conflict triple} in the graph. Three vertices $v, u, w \in V$ form
+a conflict triple if $uv, uw \in E, vw \notin E$. The problem can be solved by recursively searching
+for a conflict triple and branching into three cases: Add $vw$, remove $uv$, or remove $uw$. These
+are the only ways of resolving a conflict, and once there are no more conflicts, a solution can be
 returned. With an upper bound $k$ for the number of edits as described above, this gives a search
 tree of size $3^k$.
 
@@ -133,80 +134,79 @@ nice)
 names and ideas instead of doing "in [x]" etc.
 
 Clustering problems in general have a very long history, so we will focus only on the specific
-\textsc{Cluster Editing} problem as formulated above. In 1999, Ben-Dor, Shamir, and Yakhini
-introduced the unweighted problem in order to perform clustering on gene expression patterns
-\cite{BenDor}. They provided a stochastic model for the corruption of the true clustering introduced
-by measurements and present an $O(n^2 log(n)^c)$ algorithm that reconstructs the true clustering
-with high probability, as well as a heuristic approach based on a similar idea. Many other
-approaches for clustering gene expression data had been proposed and investigated already at this
-time, see \cite{ShamirOverview} for an overview from 2001.
+\textsc{Cluster Editing} problem as formulated above. In 1999, Ben-Dor, Shamir, and
+Yakhini~\cite{BenDor} introduced the unweighted problem in order to perform clustering on gene
+expression patterns. They provided a stochastic model for the corruption of the true clustering
+introduced by measurements and present an $O(n^2 log(n)^c)$ algorithm that reconstructs the true
+clustering with high probability, as well as a heuristic approach based on a similar idea. Many
+other approaches for clustering gene expression data had been proposed and investigated already at
+this time, see \cite{ShamirOverview} for an overview from 2001.
 
-In \cite{ShamirModifications} Shamir, Sharan, and Tsur investigated \textsc{Cluster Editing} as well
-as the related \textsc{Cluster Completion} (only edge insertions allowed) and \textsc{Cluster
-Deletion} (only edge deletions allowed) problems further. They showed that \textsc{Cluster
-Completion} can be solved in polynomial time, \textsc{Cluster Deletion} is NP-hard to approximate to
-within some constant factor, and, most relevant for us, \textsc{Cluster Editing} is NP-complete.
-Additionally they also considered variants of the problems with a fixed number of clusters as input,
-which we will not further consider. In \cite{Gramm}, Gramm et al.\ mention that the NP-completeness
-of \textsc{Cluster Editing} can already be derived from \cite{Krivanek}, published in 1986.
+Shamir, Sharan, and Tsur~\cite{ShamirModifications} investigated \textsc{Cluster Editing} as well as
+the related \textsc{Cluster Completion} (only edge insertions allowed) and \textsc{Cluster Deletion}
+(only edge deletions allowed) problems further. They showed that \textsc{Cluster Completion} can be
+solved in polynomial time, \textsc{Cluster Deletion} is NP-hard to approximate to within some
+constant factor, and, most relevant for us, \textsc{Cluster Editing} is NP-complete.  Additionally
+they also considered variants of the problems with a fixed number of clusters as input, which we
+will not further consider. Gramm et al.~\cite{Gramm} also mention that the NP-completeness of
+\textsc{Cluster Editing} can already be derived from the work of Křivánek and
+Morávek~\cite{Krivanek}, published in 1986.
 
 Bansal, Blum, and Chawla independently researched a group of problems they call \textsc{Correlation
-Clustering} in \cite{Bansal}. In their formulation, "minimizing disagreements" between the input
+Clustering}~\cite{Bansal}. In their formulation, "minimizing disagreements" between the input
 labelling and the output clustering is equivalent to the unweighted \textsc{Cluster Editing}
 problem, which they give a constant-factor approximation for. This result was improved on in 2005 by
-Charikar, Guruswami, and Wirth in \cite{Charikar}, who show the problem to be APX-hard and give an
+Charikar, Guruswami, and Wirth~\cite{Charikar}, who show the problem to be APX-hard and give an
 approximation with a constant factor of 4.
 
-In 2003 Gramm et al.\ gave initial results regarding fixed-parameter approaches for \textsc{Cluster
-Editing} specifically in \cite{Gramm}. Before that, in \cite{Cai}, Cai investigated fixed-parameter
+In 2003 Gramm et al.~\cite{Gramm} gave initial results regarding fixed-parameter approaches for
+\textsc{Cluster Editing} specifically. Before that, Cai~\cite{Cai} investigated fixed-parameter
 tractability of graph modification problems characterized by forbidden subgraphs in a more general
 sense, the results of which imply an $O(k^3 * \abs{G}^4)$ algorithm for \textsc{Cluster Editing}.
-Gramm et al.\ gave an $O(k^3)$ kernel for the problem, as well as a straightforward $O(k^3 +
-n^3)$ fixed-parameter algorithm. Additionally they show a more advanced branching strategy
-that improves the search tree size to $O(2.27^k)$, leading to an $O(2.27^k + n^3)$ algorithm.
-This approach was implemented in practice for the first time and empirically compared to an LP-based
-solver by Dehne et al.\ in 2006 \cite{Dehne}. They find that the $O(2.27^k)$ is indeed faster in
-practice than the simpler $O(k^3)$ branching.
+Gramm et al.\ gave an $O(k^3)$ kernel for the problem, as well as a straightforward $O(k^3 + n^3)$
+fixed-parameter algorithm. Additionally they show a more advanced branching strategy that improves
+the search tree size to $O(2.27^k)$, leading to an $O(2.27^k + n^3)$ algorithm.  This approach was
+implemented in practice for the first time and empirically compared to an LP-based solver by Dehne
+et al.\ in 2006~\cite{Dehne}. They find that the $O(2.27^k)$ is indeed faster in practice than the
+simpler $O(k^3)$ branching.
 
-Another avenue of research was started in 2007 by Rahmann et al.\ with \cite{Rahmann}. This
-introduced the first fixed-parameter algorithm for the weighted version of the problem, along with
-several data reduction rules to speed it up. They also introduced two heuristic algorithms.
+Another avenue of research was started in 2007 by Rahmann et al.~\cite{Rahmann}. This introduced the
+first fixed-parameter algorithm for the weighted version of the problem, along with several data
+reduction rules to speed it up. They also introduced two heuristic algorithms.
 
-Building on this, Böcker et al.\ published several papers in 2008: \cite{AnApproach},
-\cite{GoingWeighted}, and \cite{ExactAlgos}. In \cite{AnApproach} they introduce a variant of the
-refined branching strategy from \cite{Gramm} for the weighted problem, resulting in an $O(2.42^k)$
-algorithm. Most importantly, this is the first paper to introduce merging two vertices, which is an
-operation only possible on the weighted problem. As a result, with merging, Böcker et al.\ find the
-simpler $O(3^k)$ branching faster in practice than the refined branching strategy, largely due to
-the significant effect of merging. Merging is also the basis for a very simple $O(2^k)$ branching
-algorithm introduced in \cite{GoingWeighted} which means the fastest practical approach to solving the
-unweighted problem is now to transform it into a weighted instance and solve that.
-\cite{GoingWeighted} also immediately improves upon this with an $O(1.82^k)$ algorithm that is
-achieved by more carefully choosing which edge to branch on. This beats even the previous best
-theoretical runtime for the unweighted problem of $O(1.92^k)$. Lastly, in \cite{ExactAlgos}, Böcker
-et al.\ perform practical experiments with these algorithms, comparing them with a cut-and-branch
-based ILP implementation. They find both approaches to be competitive, with different performance
+Building on this, Böcker et al.\ published several papers in 2008. They introduce a variant of the
+refined branching strategy of Gramm et al.~\cite{Gramm} for the weighted problem, resulting in an
+$O(2.42^k)$ algorithm~\cite{AnApproach}. Most importantly, this is the first paper to introduce
+merging two vertices, which is an operation only possible on the weighted problem. As a result, with
+merging, Böcker et al.\ find the simpler $O(3^k)$ branching faster in practice than the refined
+branching strategy, largely due to the significant effect of merging. Merging is also the basis for
+a very simple $O(2^k)$ branching algorithm~\cite{GoingWeighted} which means the fastest practical
+approach to solving the unweighted problem is now to transform it into a weighted instance and solve
+that.  The paper also immediately improves upon this with an $O(1.82^k)$ algorithm that is achieved
+by more carefully choosing which edge to branch on. This beats even the previous best theoretical
+runtime for the unweighted problem of $O(1.92^k)$. Lastly, Böcker et al.\ perform practical
+experiments with these algorithms~\cite{ExactAlgos}, comparing them with a cut-and-branch based ILP
+implementation.  They find both approaches to be competitive, with different performance
 characteristics. Notably, good data reduction rules make the FPT approach feasible even for graphs
 that require several thousand edge modifications, despite the worst-case running times.
 
-This basic approach was improved further in \cite[Böcker and Damaschke, 2011]{EvenFaster} and
-\cite[Böcker, 2012]{GoldenRatio}. First, a theorem introduced by Damaschke in \cite{BoundedDegree}
-concerning the structure of graphs in which no edge is part of three conflict triples, is used to
-improve the algorithm to $O(1.76^k)$. Then zero-edges (which will be discussed in more detail later)
-can be used to show additional structural properties, allowing even more efficient branching for an
-$O(1.62^k)$ search tree.
+This basic approach was improved further by Böcker and Damaschke. First, a theorem introduced by
+Damaschke~\cite{BoundedDegree} concerning the structure of graphs in which no edge is part of three
+conflict triples, is used to improve the algorithm to $O(1.76^k)$~\cite{EvenFaster}. Then zero-edges
+(which will be discussed in more detail later) can be used to show additional structural properties,
+allowing even more efficient branching for an $O(1.62^k)$ search tree~\cite{GoldenRatio}.
 
 In parallel multiple problem kernels for \textsc{Cluster Editing} have also been developed. Note
 that we discuss them here separetely only to make it easier to follow, in practice the work on
 kernels is often what makes the better algorithms possible: Better reduction rules introduced as
 part of a kernel allow constructing and proving a faster search tree algorithm. In fact, these are
-often developed as a single work. Such it is for the first kernel given by Gramm et al.\ in
-\cite{Gramm}, which has at most $2k^2 + k$ vertices and can be computed in $O(n^3)$ time.
+often developed as a single work. Such it is for the first kernel given by Gramm et al.~\cite{Gramm},
+which has at most $2k^2 + k$ vertices and can be computed in $O(n^3)$ time.
 
-In \cite[2006]{Protti}, Protti, da Silva, and Szwarcfiter gave a kernel with at most $2k^2 + 4k$
+Protti, da Silva, and Szwarcfiter~\cite{Protti} gave a kernel with at most $2k^2 + 4k$
 vertices, slightly worse than that off Gramm et al.\ but still $O(k^2)$. It is based on the modular
 decomposition of a graph and has the advantage of only requiring running time $O(n + m)$. In 2007,
-Fellows et al.\ introduced a "crown-type structural reduction rule" in \cite{Fellows} and show it
+Fellows et al.\ introduced a "crown-type structural reduction rule"~\cite{Fellows} and show it
 can be used to construct a kernel with $6k$ vertices that can be computed in polynomial time.
 
 Based on both the ideas of the crown-type reduction and the concept of \emph{critical cliques},
@@ -214,7 +214,7 @@ which had already been used for good effect in fixed-parameter approaches to oth
 Guo~\cite{Guo} presented first another $6k$ kernel with $O(n^3)$ runtime and immediately improved
 this to a kernel with at most $4k$ vertices computable in $O(nm^2)$ time.
 
-Lastly, in 2011, Chen and Meng \cite{ChenMeng} combined the critical cliques concept with the notion
+Lastly, in 2011, Chen and Meng~\cite{ChenMeng} combined the critical cliques concept with the notion
 of an \emph{editing degree} of a vertex to give a $2k$ kernel which runs in $O(nm)$ time.
 
 \section{Our Implementation}
@@ -362,12 +362,7 @@ the algorithm, by editing $u'w$.
 
 An additional complication is the fact that the described merging procedure can create edges with
 weight 0, if $s(uw) = -s(vw)$.
-% TODO: Finish discussing zero-edges
-
-\begin{enumerate}
-	\item Merge two vertices
-	\item Forbid an edge (and delete it if it exists)
-\end{enumerate}
+\todo Finish discussing zero-edges
 
 \subsection{Reduction Rules}
 
@@ -464,15 +459,15 @@ if $r_1(uv) \geq 0$ and $uv$ can be merged if $r_2(uv) \geq 0$ or $r_3(uv) \geq 
 construct a list of the entries for which this applies. Then we repeatedly take the next element
 from this list and apply the corresponding reduction, until no elements are left. Of course both
 forbidding and merging an edge can have effects on the applicability of the rules on other edges. By
-analyzing which values can change by a given reduction and how, we construct a routine that can directly
-apply the change to all other affected $r$ values, without having to recompute any entirely. Note
-that these updates can lead to both entries being removed from and entries being added to the list
-of values $\geq 0$. For the full update procedure we refer to the source code associated with this
-thesis; there it is implemented and also described and justified in some detail.
-\todo Should this be described in full detail here instead?
+analyzing which $r$ values can change by a given reduction and how, we construct a routine that can
+directly apply the change to all other affected $r$ values, without having to recompute any
+entirely. Note that these updates can lead to both entries being removed from and entries being
+added to the list of values $\geq 0$. For the full update procedure we refer to the source code
+associated with this thesis; there it is implemented and also described and justified in some
+detail.  \todo Should the update procedure be described in full detail here instead?
 
 \subparagraph{Rule 4} \emph{(almost clique rule)} Let $k_C$ be the min-cut value of $G[C]$, for $C
-\subseteq V$. $C$ can be merged if
+\subseteq V$. The vertices of $C$ can be merged if
 \[
 	k_C \geq \sum_{u,v \in C, s(uv) \leq 0} \abs{s(uv)}
 		+ \sum_{u \in C, v \in V \setminus C, s(uv) > 0} s(uv).
@@ -511,13 +506,13 @@ $\Delta_v := s(v, N_v) - s(v, N_u)$. With this we can specify rule 5:
 with the maximum running over all $C_u, C_v \subseteq W$ with $C_u \cap C_v = \emptyset$.
 
 The correctness of this rule is not as obvious as for rules 1--4. Böcker et al.~\cite{GoingWeighted}
-give a proof. Roughly speaking, one can show an upper bound for $s(uv)$ if $u$ and $v$ were to be in
-different clusters in an optimal solution based on analyzing the neighborhoods of $u$ and $v$. If
-$s(uv)$ exceeds that upper bound, we know an optimal solution has $u$ and $v$ in the same cluster
+give a full proof. Roughly speaking, one can show an upper bound for $s(uv)$ if $u$ and $v$ were to
+be in different clusters in an optimal solution based on analyzing the neighborhoods of $u$ and $v$.
+If $s(uv)$ exceeds that upper bound, we know an optimal solution has $u$ and $v$ in the same cluster
 and can merge them.
 
-Here too performant implementation is of some concern, mostly it is not obvious how to efficiently
-calculate the maximum running over all disjoint subsets of $W$. Böcker et a.\ describe a dynamic
+Here too, performant implementation is of some concern. Mostly it is not obvious how to efficiently
+calculate the maximum running over all disjoint subsets of $W$. Böcker et al.\ describe a dynamic
 programming approach for calculating it in $O(\abs{W} Z)$ time and $O(Z)$ space for $Z := \sum_{w
 \in W} (s(uw) + s(vw))$ which we have implemented and will go into some detail for.
 
@@ -525,6 +520,9 @@ programming approach for calculating it in $O(\abs{W} Z)$ time and $O(Z)$ space 
 
 As rules 4 and 5 are more expensive to compute, we apply them on an even larger interval than that
 of rules 1--3.
+
+\todo Details of reduction rule application in intervals, though not clear whether here or somewhere
+else.
 
 \paragraph{Parameter-dependent reduction} The last category of reduction rules is those requiring a
 parameter $k$ to be applied. That means we can only use them once the branching search has started,
@@ -575,10 +573,10 @@ search tree node and discard the branch if $b(G) > k$.
 
 We use a very simple lower bound, also described by Böcker et al.~\cite{ExactAlgos}: For a set of
 edge-disjoint conflict triples $CT$, $\sum_{vuw \in CT} \min\{s(uv), s(uw), -s(vw)\}$ is clearly a
-lower bound on the cost of the whole graph. Calculating an \emph{optimal} $CT$, i.e.\ one that
-maximizes this sum, is expensive but just greedily constructing a set still produces a reasonable
-bound (in practice we actually maintain such a list throughout the algorithm instead of constructing
-one on demand, more details are in section~\ref{ImplDetails}.
+lower bound on the cost of the whole graph. Calculating an \emph{optimal} $CT$, one that maximizes
+this sum, is expensive, but just greedily constructing a set still produces a reasonable bound (in
+practice we actually maintain such a list throughout the algorithm instead of constructing one on
+demand, more details are in section~\ref{ImplDetails}.
 
 As mentioned above, we also have use for $b(G, xy)$, a lower bound that entirely ignores $x$ and $y$
 in its computation. In principle this could be a completely separate computation, but for simplicity
