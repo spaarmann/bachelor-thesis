@@ -2,7 +2,6 @@
 
 % Times font, math in Times Italic
 % TODO: Not actually very happy with some of the typesetting, especially around sums in equations
-% TODO: Also, some equation blocks should ideally align on their equals or something
 \usepackage{mathptmx}
 \usepackage{mathtools}
 \usepackage{amsfonts}
@@ -130,14 +129,13 @@ nice)
 		others.
 \end{enumerate}
 
-\todo Harmonize how the \ cites are integrated with the text; probably mostly just put them after
-names and ideas instead of doing "in [x]" etc.
+%todo Maybe change listing of 3 authors to et al.?
 
 Clustering problems in general have a very long history, so we will focus only on the specific
 \textsc{Cluster Editing} problem as formulated above. In 1999, Ben-Dor, Shamir, and
 Yakhini~\cite{BenDor} introduced the unweighted problem in order to perform clustering on gene
 expression patterns. They provided a stochastic model for the corruption of the true clustering
-introduced by measurements and present an $O(n^2 log(n)^c)$ algorithm that reconstructs the true
+introduced by measurements and present an $O(n^2 \log(n)^c)$ algorithm that reconstructs the true
 clustering with high probability, as well as a heuristic approach based on a similar idea. Many
 other approaches for clustering gene expression data had been proposed and investigated already at
 this time, see \cite{ShamirOverview} for an overview from 2001.
@@ -258,8 +256,12 @@ but also by merging vertices (which effectively removes a vertex; see below for 
 need to keep track of which vertices in the current graph correspond to which vertices of the
 original graph. One can either keep tracking edits throughout the branching search in terms of the
 original graph, or reconstruct the edit set at the end based on the final graph and the information
-about how vertices correspond. We have chosen to do the former.
-\todo Motivate this by Experiment1
+about how vertices correspond. Theoretically the latter is more optimal in terms of runtime because
+it only needs to do some work once the solution has been found, while the former approach has a
+slight overhead while searching. Our testing has indicated the difference is negligible however and
+we currently implement the former approach.
+
+\todo Possibly include the test results?
 
 \todo These algorithms kind of swing between by-ref and by-value arguments as they want to, should
 formulate this a bit more nicely
@@ -345,7 +347,7 @@ currently exists, deleting it will generate cost. We thus reduce $k$ by $\max\{s
 > 0$, we record the edit(s) from removing the edge. We then set $s(uv) = -Infinity$ to mark it as
 forbidden and prevent it from being reintroduced later.
 
-\paragraph{Merging} Merging two vertices $u$ and $v$ is more complicated. Conceptually, we introduce
+\paragraph{Merging} \label{sec:merging} Merging two vertices $u$ and $v$ is more complicated. Conceptually, we introduce
 a new vertex $u'$ and insert it into the graph while removing $u$ and $v$. Merged vertices are
 considered to have a permanent edge between them (we can't later split them apart again), so if
 $s(uv) \leq 0$, we record the edit(s) from inserting the edge. This also generates cost, so reduce
@@ -383,7 +385,7 @@ take advantage of the technique of merging vertices instead: Since all vertices 
 end up in the same cluster, we can merge every critical clique into a single vertex, which will
 transform the unweighted input into an integer-weighted graph. The resulting graph has at most
 $4k_{opt}$ vertices, providing a simple lower bound for the parameter at the start of the
-algorithm~\cite{GoingWeighted}\cite{Guo}.
+algorithm~\cite{GoingWeighted, Guo}.
 
 Finding the critical cliques is possible in $O(n + m)$ time. In practice we implemented a simpler
 $O(n^2)$ algorithm: Until all vertices have been assigned to a critical clique, choose one
@@ -399,7 +401,7 @@ implementing the more complicated $O(n + m)$ algorithm.
 be applied once as reduction at the very start of the algorithm, but also during the search tree
 algorithm: After some branches in the search tree have been taken, more reduction operations may
 become applicable in the context of the current branch. Concretely, we implemented reduction
-rules~1--5 as introduced by Böcker et al.~\cite{GoingWeighted}. We repeat the rules here along with
+rules~1--5 as introduced by Böcker et al.~\cite{ExactAlgos}. We repeat the rules here along with
 notes about their implementation, but omit full proofs of correctness and runtime.
 
 \todo images 
@@ -432,23 +434,19 @@ Intuitively, if removing $uv$ is more expensive than isolating $u$ and $v$ compl
 each other), it never makes sense to remove $uv$.
 
 We collectively call rules 1--3 the "fast parameter-indepdendent reduction rules." Böcker et al.\
-apply these rules in every node of the search tree~\cite{GoingWeighted}. In our testing we found it
+apply these rules in every node of the search tree~\cite{ExactAlgos}. In our testing we found it
 to be better to apply even these faster reductions only at some interval.
 \todo Reference experimental results section, or wherever we actually demonstrate this effect
 
 These rules can be applied most efficiently by combining all of them into a single pass. Our
-implementation is very similar to the strategy described by Böcker et al.~\cite{GoingWeighted} for
+implementation is very similar to the strategy described by Böcker et al.~\cite{ExactAlgos} for
 achieving $O(n^3)$ runtime: For every pair $uv$ we calculate and store
-\[
-	r_1(uv) \gets -s(uv) - \sum_{w \in N(u)} s(uw),
-\]
-\[
-	r_2(uv) \gets s(uv) - \sum_{w \in V \setminus \{u, v\}} \abs{s(uw)},
-\]
-\[
-	r_3(uv) \gets s(uv) - \sum_{w \in N(u) \setminus \{v\}} s(uw) + \sum_{w \in N(v) \setminus
+\begin{align*}
+	r_1(uv) &\gets -s(uv) - \sum_{w \in N(u)} s(uw), \\
+	r_2(uv) &\gets s(uv) - \sum_{w \in V \setminus \{u, v\}} \abs{s(uw)}, \\
+	r_3(uv) &\gets s(uv) - \sum_{w \in N(u) \setminus \{v\}} s(uw) + \sum_{w \in N(v) \setminus
 	\{u\}} s(vw).
-\]
+\end{align*}
 
 Note that rule 3 is symmetric, i.e. the order of $u$ and $v$ does not matter, and we can avoid
 calculating the same value twice. Rules 1 and 2 however are not symmetric, so the order does matter
@@ -495,7 +493,7 @@ define the \emph{exclusive neighborhoods} of $u$ and $v$ as
 \[
 	N_u := N(u) \setminus (N(v) \cup \{v\}) \text{ and } N_v := N(v) \setminus (N(u) \cup \{u\})
 \]
-and set $W := V - (N_u \cup N_v \cup \{u, v\})$ as well as $\Delta_u := s(u, N_u) - s(u, N_v)$,
+and set $W := V \setminus (N_u \cup N_v \cup \{u, v\})$ as well as $\Delta_u := s(u, N_u) - s(u, N_v)$,
 $\Delta_v := s(v, N_v) - s(v, N_u)$. With this we can specify rule 5:
 
 \subparagraph{Rule 5} \emph{(similar neighborhood)} Merge $uv$ if
@@ -505,7 +503,7 @@ $\Delta_v := s(v, N_v) - s(v, N_u)$. With this we can specify rule 5:
 \]
 with the maximum running over all $C_u, C_v \subseteq W$ with $C_u \cap C_v = \emptyset$.
 
-The correctness of this rule is not as obvious as for rules 1--4. Böcker et al.~\cite{GoingWeighted}
+The correctness of this rule is not as obvious as for rules 1--4. Böcker et al.~\cite{ExactAlgos}
 give a full proof. Roughly speaking, one can show an upper bound for $s(uv)$ if $u$ and $v$ were to
 be in different clusters in an optimal solution based on analyzing the neighborhoods of $u$ and $v$.
 If $s(uv)$ exceeds that upper bound, we know an optimal solution has $u$ and $v$ in the same cluster
@@ -514,9 +512,51 @@ and can merge them.
 Here too, performant implementation is of some concern. Mostly it is not obvious how to efficiently
 calculate the maximum running over all disjoint subsets of $W$. Böcker et al.\ describe a dynamic
 programming approach for calculating it in $O(\abs{W} Z)$ time and $O(Z)$ space for $Z := \sum_{w
-\in W} (s(uw) + s(vw))$ which we have implemented and will go into some detail for.
+\in W} (s(uw) + s(vw))$ which we have implemented and will describe in further detail here.
 
-\todo Details of dyn prog for rule 5
+We need to partition $W$ into three sets: $C_u$, $C_v$, and the remainder $R := W \setminus (C_u
+\cup C_v)$. First define the notation $\sum_u S := \sum_{w \in S} s(uw)$ and $\sum_v S := \sum_{w
+\in S} s(vw)$ for $S \subseteq W$. We want to find a partition that maximizes
+\begin{equation} \label{eq:goal}
+	\min\{\sum_v C_v - \sum_v C_u, \sum_u C_u - \sum_u C_v\}.
+\end{equation}
+
+To find this maximum, we take a dynamic programming approach. Set $X := \sum_{w \in W} \abs{s(uw)}$
+and $Y := \sum_{w \in W} \abs{s(vw)}$. Let $W = \{w_1, \dots, w_k\}$. Then we define boolean
+matrices $D_j[-X \dots X, -Y \dots Y], 0 \leq j \leq k$ where $D_j[x, y]$ is 'true' if there is a
+partition $C_u$, $C_v$, $R$ of only $\{w_1, \dots, w_j\}$ such that
+\begin{equation*}
+	\sum_u C_u - \sum_u C_v = x \text{ and } \sum_v C_v - \sum_v C_u = y.
+\end{equation*}
+
+Clearly we can then determine the maximum of (\ref{eq:goal}) as
+\begin{equation*}
+	\max_{D_k[x, y]='\mathrm{true}'} \min\{x, y\}.
+\end{equation*}
+
+To find this maximum, we first observe that $D_0[x, y]$ is only 'true' for $(x, y) = (0, 0).$ For
+every subsequent $w_j$ we can assign it to one of the three sets, giving the following recurrence
+with which we can calculate $D_k$ in $O(kXY)$ time and $O(XY)$ space:
+\begin{align*}
+	D_j[x, y] = & D_{j-1}[x, y] \\
+				& \lor D_{j-1}[x + s(u, w_j), y - s(v, w_j)] \\
+				& \lor D_{j-1}[x - s(u, w_j), y + s(v, w_j)]
+\end{align*}
+
+% todo: infinities in this part already; delta_u and delta_v
+
+This quadratic time is clearly much better than the naive $O(\abs{W}^3)$ approach but we can in fact
+do even better with a linear time algorithm. Define $M_j[x]$ to be the \emph{maximal} index $y$
+such that $D_j[x, y]$ is 'true'. Clearly $M_0[0] = 0$ and we otherwise initialize $M_0[x] = -\infty$
+for $x \neq 0$. We can then construct $M_k$ using the recurrence
+\begin{equation*}
+	M_j[x]= \max \{ M_{j-1}[x], M_{j-1}[x + s(u, w_j)] - s(v, w_j), M_{j-1}[x - s(u, w_j)] + s(v,
+		w_j) \}.
+\end{equation*}
+
+The maximum can then be computed as $\max_x \min \{x, M_k[x] \}$. % TODO: Justification/proof here.
+
+\todo Finish details of dyn prog for rule 5
 
 As rules 4 and 5 are more expensive to compute, we apply them on an even larger interval than that
 of rules 1--3.
@@ -537,12 +577,12 @@ we see that we cannot afford forbidding them anymore, we can merge them now, and
 specifically, define $icf(uv)$ and $icp(uv)$, the \emph{induced cost of forbidding} $uv$ and the
 \emph{induced cost of setting $uv$ permanent}, as:
 
-\[
-	icf(uv) = \sum_{w \in N(u) \cap N(v)} \min\{s(uw), s(vw)\}
-\]
-\[
-	icp(uv) = \sum_{w \in N(u) \Delta N(v)} \min\{\abs{s(uw)}, \abs{s(vw)}\}
-\]
+\begin{align*}
+	icf(uv) &= \sum_{w \in N(u) \cap N(v)} \min\{s(uw), s(vw)\} \\
+	icp(uv) &= \sum_{w \in N(u) \Delta N(v)} \min\{\abs{s(uw)}, \abs{s(vw)}\}
+\end{align*}
+
+\todo u and v are in the symmetric difference?
 
 These definitions are readily apparent: Forbidding $uv$ requires that at some point all common
 neighbors of $u$ and $v$ must be separated from either $u$ or $v$. Marking $uv$ as permanent (which,
@@ -585,18 +625,116 @@ where any of $v$, $u$, $w$ are equal to $x$ or $y$ when calculating the sum.
 
 \subsection{Implementation Details} \label {ImplDetails}
 
-\todo Order tbd
-\begin{enumerate}
-	\item Graph data structure
-	\item Conflict Tracking
-	\item Oplogs
-	\item Something interesting I'm forgetting ?
-\end{enumerate}
+\todo Not quite sure where to put the "will be open-sourced" part, should also refer to where it can
+be found.
 
+The implementation of our solver will be open-sourced as part of the submission to the PACE
+challenge.
+
+While the previous sections were largely theoretical, in this section we will describe some of the
+concrete implementation decisions we have made, especially with a focus on maintaining good
+performance: Clearly good algorithmic approaches are necessary to tackle any NP-complete problem,
+but efficient implementation can also make a significant difference. As the first decision to make,
+we chose Rust~\cite{Rust} as our implementation language. Rust is a modern language that can produce
+well optimized native code with performance similar to e.g.\ C++, while also providing memory
+safety, a more advanced type system, and other features that allow greater productivity. 
+
+\paragraph{Graph Storage} Recall that we work on undirected, weighted graphs. A purely
+adjacency-list based approach is not practical because in our setting non-edges also have weights
+(specifically negative ones.) Consequently, we initially stored a graph as a simple triangular
+matrix of weights.
+
+While this is a very space-efficient form, testing quickly revealed it is actually much more
+efficient to simply store a full rectangular matrix which stores each weight twice, at least as long
+as this doesn't lead to excessive memory usage. We expect the difference largely comes from cheaper
+reads of the matrix: In the general case, reading the weight associated with two arbitrary vertices
+requires a branch (or at least finding which vertex index is the smaller one) to calculate the
+correct index into the triangular matrix while reading from the full matrix only requires a
+multiplication and an addition. To an extent this can be mitigated by taking advantage of access
+patterns where the relative ordering of the vertices is known statically. We generally tried to
+utilize such patterns where possible, but even so, the full rectangular matrix approach was
+significantly faster. Note that paying attention to the same access patterns is still worthwhile
+however, as they also improve access locality and predictability when iterating with the rectangular
+matrix.
+
+The matrix works well for quickly reading and writing specific weights, but, as with any
+adjacency-matrix, iterating over the neighbors of a vertex is linear in the total vertex count, not
+the neighbor count. As many operations and reductions require iteration over neighbors, we also
+experimented with hybrid approaches to graph storage, with both an adjacency matrix and adjacency
+lists. In our tests, the overhead of maintaining the adjacency lists outweighed any benefit in
+iteration time however. Abu-Khzam et al.~\cite{AbuKhzam} discuss an interesting hybrid
+representation specifically designed to facilitate efficient branch-and-reduce search algorithms. It
+enables very fast implementation of several common operations, including "undo" of them when moving
+on to another branch. Unfortunately significant parts of it are not immediately applicable for
+weighted graphs, reducing its effectiveness in our setting. Within the bounds of this thesis we
+ultimately stick with the rectangular weight matrix, but this avenue is nevertheless promising if a
+similar representation that supports weighted graphs could be found.
+
+\paragraph{Merging vertices} As discussed in section~\ref{sec:merging}, from a theoretical
+perspective, merging vertices $u$ and $v$ can be modelled as removing both of them from the graph
+and instead adding a new vertex $u'$. In practice there are significant advantages to keeping the
+graph storage fixed-size. This not only lets us avoid reallocating and copying the storage, it also
+makes it much easier to roll back changes (which we discuss in more detail below). To this end, a
+graph is composed of not just a matrix, but also a boolean mask storing whether each vertex is
+actually present in the graph. Merging $u$ and $v$ then instead involves assigning the weights that
+were described for $u'$ to $u$ and marking $v$ as not present in the graph anymore. Operations such
+as iterating over all vertices, or over neighbors, check the presence mask and skip vertices that
+are not present.
+
+\paragraph{Undo} Over the course of the algorithm, we explore a large search tree of possible
+operations to find the optimal solution. At any fork point, the solver first takes one branch and
+searches further, and, if that did not give a solution, then tries the other branch. To take the
+second branch, we need to again have the initial state at the fork point available to proceed from.
+A very simple way to achieve this is to simply clone the entire relevant state before taking the
+first branch. This is however very inefficient: Not only is cloning everytime expensive in terms of
+runtime, it also leads to a large amount of memory usage because the full set of previous states has
+to be kept around while descending the tree until a "leaf" is reached.
+
+To avoid this, we instead track a list of operations done on the graph (setting a weight, and
+marking a vertex as not present), along with the information needed to undo it (the two vertices and
+the previous weight, and which vertex was marked respectively.) When we reach a fork point, we note
+the current length of this "operation log", or \emph{oplog}, and proceed with the first branch. To
+later try the other branch, we undo all operations in reverse order until the length of the oplog
+matches the value we recorded again.
+
+This is much faster in terms of runtime than constantly making copies of the entire relevant state.
+It also helps with memory usage: While it doesn't change the asymptotic behaviour (we still keep
+some additional state for each branch in the current stack), it does in practice reduce memory usage
+so much that it has been a complete non-issue in our testing on the public PACE challenge problem
+instances.
+
+\paragraph{Conflict Tracking} Over the course of the algorithm, we keep track of where conflict
+triples are in the graph. Whenever we insert or delete an edge in the graph, we perform a
+corresponding update for the conflict tracking data structure. We actually store three different
+sets of information: A boolean mask for all triples in the graph that is true where the triple is a
+conflict, a list of edge disjoint conflicts, and a mapping from edges to indices into this list.
+The list of edge disjoint conflicts is used to very quickly calculate a lower bound on the size of
+the solution, as described earlier. The mapping and the mask structures are used to efficiently
+perform updates for edge insertions and deletions in $O(n)$ time.
+
+\todo Maybe tools / scripts (perf, compare-results, etc.)
+\todo anything else particularly interesting?
 
 \section{Experimental results}
 
 \todo
+
+\begin{itemize}
+	\item Critical clique reduction effectiveness
+	\item Initial param-independent reduction effectiveness
+	\item Reduction during the search... this is harder/more expensive to measure
+	\item Parameter-tuning (reduction intervals)
+	\item What techniques provided what kind of benefit as they were introduced, what did we try
+		that wasn't worth it?
+\end{itemize}
+
+\section{Outlook / Future Possibilities / ?}
+
+\begin{itemize}
+	\item multithreading?
+	\item more reductions?
+	%\item better branching?
+\end{itemize}
 
 \todo Clean the references up a bit, and double-check years etc. Right now these are just whatever
 Zotero produced on its own, which is useful to get started quickly. (Clean up formatting too)
@@ -695,6 +833,14 @@ Computer Science, vol. 410, no. 8, pp. 718–726, Mar. 2009, doi: 10.1016/j.tcs.
 \bibitem{ChenMeng}
 J. Chen and J. Meng, “A 2k kernel for the cluster editing problem,” Journal of Computer and
 System Sciences, vol. 78, no. 1, pp. 211–220, Jan. 2012, doi: 10.1016/j.jcss.2011.04.001.
+
+\bibitem{Rust}
+“Rust Programming Language.” https://www.rust-lang.org/ (accessed Apr. 20, 2021).
+
+\bibitem{AbuKhzam}
+F. N. Abu-Khzam, K. A. Jahed, and A. E. Mouawad, “A Hybrid Graph Representation for Exact Graph
+Algorithms,” arXiv:1404.6399 [cs], Apr. 2014, Accessed: Apr. 20, 2021. [Online]. Available:
+http://arxiv.org/abs/1404.6399.
 
 \end{thebibliography}
 
