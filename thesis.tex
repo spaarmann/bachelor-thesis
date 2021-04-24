@@ -20,6 +20,11 @@
 % Theorem styles
 \usepackage{amsthm}
 
+\usepackage{graphicx}
+\usepackage[outdir=./out/]{epstopdf}
+\graphicspath{ {./images/} }
+\usepackage{subcaption}
+
 % Prevent single first or last lines of a paragraph appearing alone at the top or bottom
 % of a page.
 \clubpenalty=10000
@@ -195,7 +200,7 @@ conflict triples, is used to improve the algorithm to $O(1.76^k)$~\cite{EvenFast
 allowing even more efficient branching for an $O(1.62^k)$ search tree~\cite{GoldenRatio}.
 
 In parallel multiple problem kernels for \textsc{Cluster Editing} have also been developed. Note
-that we discuss them here separetely only to make it easier to follow, in practice the work on
+that we discuss them here separately only to make it easier to follow, in practice the work on
 kernels is often what makes the better algorithms possible: Better reduction rules introduced as
 part of a kernel allow constructing and proving a faster search tree algorithm. In fact, these are
 often developed as a single work. Such it is for the first kernel given by Gramm et al.~\cite{Gramm},
@@ -433,7 +438,7 @@ merged if
 Intuitively, if removing $uv$ is more expensive than isolating $u$ and $v$ completely (except from
 each other), it never makes sense to remove $uv$.
 
-We collectively call rules 1--3 the "fast parameter-indepdendent reduction rules." Böcker et al.\
+We collectively call rules 1--3 the "fast parameter-independent reduction rules." Böcker et al.\
 apply these rules in every node of the search tree~\cite{ExactAlgos}. In our testing we found it
 to be better to apply even these faster reductions only at some interval.
 \todo Reference experimental results section, or wherever we actually demonstrate this effect
@@ -686,7 +691,7 @@ operations to find the optimal solution. At any fork point, the solver first tak
 searches further, and, if that did not give a solution, then tries the other branch. To take the
 second branch, we need to again have the initial state at the fork point available to proceed from.
 A very simple way to achieve this is to simply clone the entire relevant state before taking the
-first branch. This is however very inefficient: Not only is cloning everytime expensive in terms of
+first branch. This is however very inefficient: Not only is cloning every time expensive in terms of
 runtime, it also leads to a large amount of memory usage because the full set of previous states has
 to be kept around while descending the tree until a "leaf" is reached.
 
@@ -698,7 +703,7 @@ later try the other branch, we undo all operations in reverse order until the le
 matches the value we recorded again.
 
 This is much faster in terms of runtime than constantly making copies of the entire relevant state.
-It also helps with memory usage: While it doesn't change the asymptotic behaviour (we still keep
+It also helps with memory usage: While it doesn't change the asymptotic behavior (we still keep
 some additional state for each branch in the current stack), it does in practice reduce memory usage
 so much that it has been a complete non-issue in our testing on the public PACE challenge problem
 instances.
@@ -717,6 +722,100 @@ perform updates for edge insertions and deletions in $O(n)$ time.
 
 \section{Experimental results}
 
+While developing the solver we have so far computed optimal solutions for 34 of the public test
+instances of the PEACE challenge overall, and can compute 31 of those within the 30 minutes per
+instance time limit set by the challenge.
+
+\todo Something about which instances are solvable, how big the solutions are, ... 
+
+\paragraph{Reduction effectiveness} We first present some results regarding the effectiveness of the
+initial reduction steps. These are comparatively easy to measure as we can simply execute the
+reduction on all instances and record the result. In figure~\ref{fig:crit_clique eff} we give an
+overview of how effective the critical clique reduction is for the test instances. Notably results
+are very varied, with 35 instances not being reduced at all, one instance being almost solved
+entirely (from 250 vertices in the input to 5 vertices), and other results at various places in
+between. This is somewhat expected considering the critical clique approach ultimately doesn't
+produce any edits, it only identifies and merges groups of vertices that are already cliques. Thus
+the effectiveness is entirely subject to the structure of the input graph.
+
+\begin{figure}[h]
+	\begin{subfigure}{0.49\textwidth}
+		\includegraphics[width=1.0\linewidth]{crit_cliques_absolute}
+	\end{subfigure}
+	\begin{subfigure}{0.49\textwidth}
+		\includegraphics[width=1.0\linewidth]{crit_cliques_percent}
+	\end{subfigure}
+	\caption{Critical Clique Reduction Effectiveness}
+	\label{fig:crit_clique eff}
+\end{figure}
+
+We present the same statistics for rules 1--5 applied together and for the complete initial
+reduction in figures~\ref{fig:rules1-5 eff} and~\ref{fig:initial eff}. Note that rule 1 forbids
+edges instead of merging vertices, so it does not have a direct effect on these graphs (it may still
+enable other reduction steps however). We observe that many of the larger peaks occur for the same
+instance for both the critical clique reduction and rules 1--5. With figure~\ref{fig:initial eff} we
+can see that overall reduction is in fact most effective with all reductions enabled, as expected.
+Considering the negligible runtime of the reductions on graphs of the size used in the challenge, it
+is definitely reasonable to always run the full set.
+
+\begin{figure}[h]
+	\begin{subfigure}{0.49\textwidth}
+		\includegraphics[width=1.0\linewidth]{rules1-5_absolute}
+	\end{subfigure}
+	\begin{subfigure}{0.49\textwidth}
+		\includegraphics[width=1.0\linewidth]{rules1-5_percent}
+	\end{subfigure}
+	\caption{Rules 1--5 Effectiveness}
+	\label{fig:rules1-5 eff}
+\end{figure}
+
+\begin{figure}[h]
+	\begin{subfigure}{0.49\textwidth}
+		\includegraphics[width=1.0\linewidth]{full_initial_absolute}
+	\end{subfigure}
+	\begin{subfigure}{0.49\textwidth}
+		\includegraphics[width=1.0\linewidth]{full_initial_percent}
+	\end{subfigure}
+	\caption{Full Initial Reduction Effectiveness}
+	\label{fig:initial eff}
+\end{figure}
+
+An additional factor to consider is that while the effectiveness of the critical clique reduction is
+fully captured in the size of the reduced graphs, the same is not true for the other reductions.
+While most of them (with the exception of rule 1) also perform merging of vertices as their only
+operation on the graph, this can also result in various additional edits, hopefully making the
+complete solution easier to find. For an impression of how effective the reductions are in this
+regard, in figure~\ref{fig:edits from reduction} we show what percentage of the amount of edits in
+an optimal solution is found by the reductions (for the 34 instances we have solved so far).
+Comparing the full set of reductions with only using rules 1--5, we can see that while the critical
+clique reduction does not produce any edits on its own, the simplified graph it produces is easier
+to reduce by the other rules.
+
+\begin{figure}[h]
+	\begin{subfigure}{0.49\textwidth}
+		\includegraphics[width=1.0\linewidth]{percent_edits_full}
+		\subcaption{Full Initial Reduction}
+	\end{subfigure}
+	\begin{subfigure}{0.49\textwidth}
+		\includegraphics[width=1.0\linewidth]{percent_edits_rules1-5}
+		\subcaption{Only rules 1--5}
+	\end{subfigure}
+	\caption{\% of edits of an optimal solution found by initial reduction steps}
+	\label{fig:edits from reduction}
+\end{figure}
+
+It is more difficult to precisely measure the effectiveness of reduction steps that happen while
+executing the search algorithm. 
+
+% Measurements for interleaved reduction?
+% - In the path that led to the solution, how much reduction did the rules do?
+%   -> this tells us nothing about how much calculation we were able to skip because of them
+% - how much reduction effect they have overall in an execution
+%   -> measured in reduction in k? In number of edits made?
+%   - to be useful this would probably also require measuring the *total* number of whatever is
+%     measured, to compare
+% - comparison in runtime with rules disabled or settings tweaked
+
 \todo
 
 \begin{itemize}
@@ -731,8 +830,9 @@ perform updates for edge insertions and deletions in $O(n)$ time.
 \section{Outlook / Future Possibilities / ?}
 
 \begin{itemize}
-	\item multithreading?
+	\item multi-threading?
 	\item more reductions?
+	\item improved initial reduction by making use of upper bounds?
 	%\item better branching?
 \end{itemize}
 
