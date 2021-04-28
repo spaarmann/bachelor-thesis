@@ -1,10 +1,17 @@
-\documentclass{article}
+\documentclass[12pt,oneside,english,parskip=full,headings=small]{scrbook}
 
-% Times font, math in Times Italic
-% TODO: Not actually very happy with some of the typesetting, especially around sums in equations
-\usepackage{mathptmx}
+\usepackage{lmodern}
 \usepackage{mathtools}
 \usepackage{amsfonts}
+
+\usepackage[a4paper]{geometry}
+\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=3.5cm,rmargin=2.5cm,headsep=0.5cm,footskip=1cm}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{2}
+
 % Generate PDF links for ToC, cite, ref, etc.
 \usepackage{hyperref}
 
@@ -27,7 +34,19 @@
 \graphicspath{ {./images/} }
 \usepackage{subcaption}
 
-\setlength {\parskip} {1ex}
+\setlength{\parskip}{1ex}
+\setlength{\parindent}{1.0cm}
+
+% The following commands set the page numbers on the top right
+% except in the beginning of chapters
+% using fancyhdr package (page layout>heading style->fancy)
+\lhead{}
+\chead{}
+\rhead{\thepage}
+\lfoot{}
+\cfoot{}
+\rfoot{}
+\renewcommand{\headrulewidth}{0pt}
 
 % Prevent single first or last lines of a paragraph appearing alone at the top or bottom
 % of a page.
@@ -63,17 +82,69 @@
 \theoremstyle{definition}
 \newtheorem{definition}[theorem]{Definition}
 
-\title{Algorithm Engineering for Cluster Editing}
-\author{Sebastian Paarmann}
-\date\today
-
 \begin{document}
 
+% Title, declaration, ...
+\frontmatter
+
+\vspace{2.5cm}
+
+
+\title{\textrm{\huge{}Algorithm Engineering for Cluster Editing}\\
+	\vspace{1.8cm}
+}
+
+\author{\textbf{\LARGE{}Sebastian Paarmann}\vspace{2.5cm}
+	\\
+	{\normalsize{}A thesis submitted in}\\
+	{\normalsize{}fulfillment of the requirements for the award of
+	}\\
+	{\normalsize{}Bachelor of Computer Science\vspace{3.1cm}
+	}\\
+	{\normalsize{}}\\
+	{\normalsize{}\includegraphics[scale=0.2]{tuhh}}\\
+	{\normalsize{}\vspace{3.1cm}
+}}
+
 \maketitle
+\begin{center}
+	$ $\thispagestyle{plain}\addcontentsline{toc}{chapter}{Declaration}\vspace{2cm}
+\par\end{center}
+
+\begin{center}
+	I hereby declare that this thesis entitled \textquotedblleft Algorithm Engineering for Cluster
+	Editing\textquotedblright{} is the result of my own
+	research except as cited in the references. This thesis has not been
+	accepted for any degree and is not concurrently submitted in candidature
+	of any other degree. \vspace{2cm}
+\par\end{center}
+
+Signature$\hphantom{xte1}$:
+
+Student$\hphantom{Date1}$: Sebastian Paarmann
+
+Date$\hphantom{Student1}$: \vspace{4cm}
+
+Supervisor$\hphantom{Co}\,$: Prof. Dr. Matthias Mnich\vspace{2cm}
+
+Co-Supervisor: Dr. Jens M. Schmidt
+
+\newpage{}
+
+\addchap{Acknowledgment}
+
+Some acknowledgments I still have to write at some point.
+
+\begin{flushright}
+	Sebastian Paarmann, Henstedt-Ulzburg
+\par\end{flushright}
 
 \tableofcontents
+\clearpage
 
-\section{Introduction}
+\mainmatter
+
+\chapter{Introduction}
 
 A \emph{cluster} graph, also called \emph{transitive} graph, is a graph which consists only of
 disjoint cliques. In the \textsc{Cluster Editing} problem, the input is an undirected graph $G$ and
@@ -118,7 +189,7 @@ more~\cite{BoeckerBaumbach}. As one case of the \textsc{Correlation Clustering} 
 have also been found in machine learning contexts, for example to perform deduplication of
 data~\cite{Bansal}.
 
-\section{Preliminaries}
+\chapter{Preliminaries}
 
 First, some notation used throughout this thesis: A graph $G = (V, E)$ has a vertex set $V$ and edge
 set $E \subseteq \binom{V}{2}$. Graphs are simple graphs, i.e.\ they contain no self-loops or
@@ -152,7 +223,7 @@ instance with minimal modifications. One can also consider the weighted problem 
 weights, but we will not do so further here.
 
 \textsc{Cluster Editing} is NP-complete~\cite{ShamirModifications}, so there is no polynomial time
-algorithm for solving it (unless P = NP). It is however \emph{fixed-paramter tractable}.
+algorithm for solving it (unless P = NP). It is however \emph{fixed-parameter tractable}.
 Fixed-parameter tractability (FPT) is a concept from parameterized complexity theory. A problem is
 called fixed-parameter tractable if there is an algorithm to solve it in time $f(k) * n^c$, where
 $n$ is the size of the input, $k$ is some additional parameter, $c$ is a constant independent of
@@ -162,9 +233,9 @@ maximum degree in a graph) or a limit on the size of the solution. In this way t
 increase in runtime can be contained in the parameter, instead of the algorithm scaling
 exponentially with the input size. More detailed information can be found e.g.\ in the book of Cygan
 et al.~\cite{ParameterizedAlgorithms}. In our case $k$ describes the maximum amount of edits, i.e.\
-the maximum size of the solution and $n$ is $\abs{G}$. To solve the optimization problem, as
-required by the PACE challenge, with a parameterized FPT algorithm, we simply execute the algorithm
-in a loop starting with $k = 1$ and increasing $k$ until we find a solution.
+the maximum size of the solution, and $n$ is $\abs{G}$. To solve the optimization problem that is
+required by the PACE challenge with a parameterized FPT algorithm, we simply execute the algorithm
+in a loop starting with $k = 1$ and increase $k$ until we find a solution.
 
 We make use of some important techniques from the field of parameterized algorithms, mainly
 \emph{kernels} and data reduction rules, and \emph{bounded search trees}. Data reduction rules take
@@ -175,7 +246,7 @@ in some way \emph{easier}, for example by making the input smaller or reducing t
 describe the various reduction rules used in our algorithm in section~\ref{sec:reduction}. A
 kernel is a preprocessing algorithm which gives an upper bound on the size of the returned instance
 in terms of the input parameter $k$. Kernels are often implemented in terms of multiple reduction
-rules are that are repeatedly applied.
+rules that are repeatedly applied.
 
 Apart from the reduction rules, the general shape of the algorithm we implement is that of a bounded
 search tree algorithm, also called a branching algorithm. This is essentially the idea of
@@ -183,23 +254,11 @@ backtracking: The algorithm takes some decision regarding the solution (e.g.\ ad
 edge) and then recursively executes on the resulting instance. If that recursive call does not yield
 a solution, a different decision is taken instead and the procedure repeated. If it can be
 guaranteed that some sequence of decisions will lead to a solution if one exists, this kind of
-algorithm can correctly solve the problem. It can be viewed as recursively moving through a search
-tree where each ``decision point'' is a node. As the name says, the search tree should also be
-bounded: There should be a limit on the amount of branches taken in each node as well as a guarantee
-that after each decision the instance is substantially simpler such that we will eventually reach a
-leaf node where the solution (or its non-existence) is trivial.
-
-To illoustrate, there is a very simple search tree algorithm for \textsc{Cluster Editing}, given by
-the observation that a graph $G = (V, E)$ is a cluster graph if and only if there is no
-\emph{conflict triple} in the graph. Three vertices $v, u, w \in V$ form a conflict triple if $uv,
-uw \in E, vw \notin E$, i.e.\ the vertices form an induced $P_3$. The problem can be solved by
-recursively searching for a conflict triple and branching into three cases: Add $vw$, remove $uv$,
-or remove $uw$. These are the only ways of resolving a conflict, and once there are no more
-conflicts, a solution can be returned. Looking at our criteria for a bounded search tree from above,
-this has a limit on the branches per node, exactly three. And for each branch we perform an edit on
-the graph and thus reduce $k$ by 1, limiting the depth of the search. This algorithm gives a search
-tree of size $O(3^k)$, though we will see in the next sections that more efficient trees are
-possible. The basic idea of this branching strategy is illustrated in Figure~\ref{fig:conflicts}.
+algorithm correctly solves the problem. It can be viewed as recursively moving through a search tree
+where each ``decision point'' is a node. As the name says, the search tree should also be bounded:
+There should be a limit on the amount of branches taken in each node as well as a guarantee that
+after each decision the instance is substantially simpler such that we will eventually reach a leaf
+node where the solution (or its non-existence) is trivial.
 
 \begin{figure}[h]
 	\centering
@@ -208,7 +267,19 @@ possible. The basic idea of this branching strategy is illustrated in Figure~\re
 	\label{fig:conflicts}
 \end{figure}
 
-\section{Previous Work}
+A central observation regarding the \textsc{Cluster Editing} problem is that a graph $G = (V, E)$ is
+a cluster graph if and only if there is no \emph{conflict triple} in the graph. Three vertices $v,
+u, w \in V$ form a conflict triple if $uv, uw \in E, vw \notin E$, i.e.\ the vertices form an
+induced $P_3$. This leads to a very simple search tree algorithm: The problem can be solved by
+recursively searching for a conflict triple and branching into three cases: Add $vw$, remove $uv$,
+or remove $uw$. These are the only ways of resolving a conflict, and once there are no more
+conflicts, a solution can be returned. Looking at our criteria for a bounded search tree from above,
+this has a limit on the branches per node, exactly three. And for each branch we perform an edit on
+the graph and thus reduce $k$ by 1, limiting the depth of the search. This algorithm gives a search
+tree of size $O(3^k)$, though we will see in the next sections that more efficient trees are
+possible. The basic idea of this branching strategy is illustrated in Figure~\ref{fig:conflicts}.
+
+\chapter{Previous Work}
 
 %todo Maybe change listing of 3 authors to et al.?
 
@@ -227,12 +298,12 @@ the related \textsc{Cluster Completion} (only edge insertions allowed) and \text
 solved in polynomial time, \textsc{Cluster Deletion} is NP-hard to approximate to within some
 constant factor, and, most relevant for us, \textsc{Cluster Editing} is NP-complete.  Additionally
 they also considered variants of the problems with a fixed number of clusters as input, which we
-will not further consider. Gramm et al.~\cite{Gramm} also mention that the NP-completeness of
+will not further discuss here. Gramm et al.~\cite{Gramm} also mention that the NP-completeness of
 \textsc{Cluster Editing} can already be derived from the work of Křivánek and
 Morávek~\cite{Krivanek}, published in 1986.
 
 Bansal, Blum, and Chawla independently researched a group of problems they call \textsc{Correlation
-Clustering}~\cite{Bansal}. In their formulation, ``minimizing disagreements'' between the input
+Clustering}~\cite{Bansal}. In this formulation, ``minimizing disagreements'' between the input
 labelling and the output clustering is equivalent to the unweighted \textsc{Cluster Editing}
 problem, which they give a constant-factor approximation for. This result was improved on in 2005 by
 Charikar, Guruswami, and Wirth~\cite{Charikar}, who show the problem to be APX-hard and give an
@@ -293,7 +364,7 @@ can be used to construct a kernel with $6k$ vertices that can be computed in pol
 Based on both the ideas of the crown-type reduction and the concept of \emph{critical cliques},
 which had already been used for good effect in fixed-parameter approaches to other problems,
 Guo~\cite{Guo} presented first another $6k$ kernel with $O(n^3)$ runtime and immediately improved
-this to a kernel with at most $4k$ vertices computable in $O(nm^2)$ time. Lastly, in 2011, Chen and
+this to a kernel with at most $4k$ vertices computable in $O(nm^2)$ time. In 2011, Chen and
 Meng~\cite{ChenMeng} combined the critical cliques concept with the notion of an \emph{editing
 degree} of a vertex to give a $2k$ kernel which runs in $O(nm)$ time.
 
@@ -305,12 +376,12 @@ mainly on a reduction technique that is worse than newer ones from a theoretical
 is able to produce significant runtime improvements in practice on their varied test data.
 
 Lastly, there are also \emph{integer linear programming} (ILP) formulations of the problem and
-associated solvers. As we implemented only a bounded search tree algorithm, we do not go into
-further detail regarding these approaches but note that early work of Grötschel and
-Wakabayashi~\cite{CuttingPlane} and the modern $\mathsf{yokisho}$ solver~\cite{yokisho} that
-combines an ILP solver with data reduction rules.
+associated solvers which we have already mentioned in relation to other work above. As we
+implemented only a bounded search tree algorithm, we do not go into further detail regarding these
+approaches but note the early work of Grötschel and Wakabayashi~\cite{CuttingPlane} and the modern
+$\mathsf{yokisho}$ solver~\cite{yokisho} that combines an ILP solver with data reduction rules.
 
-\section{Our Implementation}
+\chapter{Our Implementation}
 
 In this section we will describe the implementation of our solver in some detail. It is based on
 many techniques introduced by the papers mentioned above. Those are only briefly summarized there
@@ -321,7 +392,7 @@ solver, followed by a more in-depth look at the two basic modifying operations t
 the graph during execution of the algorithm. Next, we describe the reduction rules used, and finally
 some details on the practical implementation of the described algorithm, e.g.\ used data structures.
 
-\subsection{High-Level Overview}
+\section{High-Level Overview}
 
 The solver consists of two main parts: The solver function, Algorithm~\ref{alg:solver}, that
 performs interleaved reduction and the branching strategy, calling itself recursively; and a
@@ -334,8 +405,8 @@ techniques. We currently use a very simple branching strategy: We take a conflic
 and branch into two cases, merging $uv$ and forbidding $uv$. These operations will be described in
 more detail in the next section. This strategy was introduced by Böcker et al.~\cite{GoingWeighted}
 and shown to lead to a search tree size of $O(2.62^k)$. Böcker et al.\ also introduced more advanced
-branching strategies, with even smaller search trees which would like to implement but have not so
-far due to time constraints.
+branching strategies, with even smaller search trees which would also like to implement but have not
+so far due to time constraints.
 
 The reductions are split into several categories. There is the initial step of taking an
 unweighted instance and turning it into a reduced weighted instance. A set of parameter-independent
@@ -424,15 +495,15 @@ and record edits for each possible pair.
 \end{algorithmic}
 \end{algorithm}
 
-\subsection{Basic Operations}
+\section{Basic Operations}
 
 Ultimately we want to find a set of edge insertions and deletions. Thus, as we move through the
-search tree and execute reduction rules, inserting and deleting edges is precisely what we want to
-do. Consider however that for example, if we delete an edge as part of branching into some part of
-the search tree, we want to ensure it does not get re-added later: All potential solutions with that
-edge not deleted are part of the other branch. If we did not ensure this, we would lose the
-guarantee of forward progress in the algorithm because we could get into a cycle of repeatedly
-deleting and adding an edge as branching operation.
+search tree and execute reduction rules, inserting and deleting edges are precisely the operations
+we want to perform. However, if we for example delete an edge as part of branching into
+some part of the search tree, we want to ensure it does not get re-added later: All potential
+solutions with that edge not deleted are part of the other branch. If we did not ensure this, we
+would lose the guarantee of forward progress in the algorithm because we could get into a cycle of
+repeatedly deleting and adding an edge as branching operation.
 
 As a consequence the operations we really want to perform are setting an edge to ``permanent'' or
 ``forbidden'' so the edit cannot be undone later in the same part of the search tree. To that end,
@@ -477,7 +548,7 @@ be when creating a zero-edge, and then reduce it by the remaining $0.5$ when mod
 zero-edge's weight to something else again, thus guaranteeing some reduction in $k$ for that
 operation.
 
-\subsection{Reduction Rules}
+\section{Reduction Rules}
 \label{sec:reduction}
 
 \paragraph{Critical Cliques} One can obtain an equivalent weighted instance from an unweighted one,
@@ -670,7 +741,7 @@ for $x \neq 0$. We can then construct $M_k$ using the recurrence
 
 The maximum can then be computed as $\max_x \min \{x, M_k[x] \}$. % TODO: Justification/proof here.
 
-\todo Finish details of dyn prog for rule 5
+\todo The explanation for rule 5 isn't finished yet 
 
 As rules 4 and 5 are more expensive to compute, we apply them on an even larger interval than that
 of rules 1--3.
@@ -713,7 +784,7 @@ uv) > k$ and $\mathsf{icp}(uv) + \max\{0, -s(uv)\} + b(G, uv) > k$ as tests. Thi
 is significantly better than the less tight lower bound, even though it requires calculating this
 lower bound for each pair.
 
-\subsection{Lower Bounds}
+\section{Lower Bounds}
 
 Computing lower bounds on the cost of a solution for the remaining problem provides an effective way
 to cull parts of the search tree early. To this end we calculate a lower bound $b(G)$ in every
@@ -731,7 +802,7 @@ in its computation. In principle this could be a completely separate computation
 and performance reasons, we use the same set $CT$ as for $b(G)$ but ignore all conflict triples $vuw$
 where any of $v$, $u$, $w$ are equal to $x$ or $y$ when calculating the sum.
 
-\subsection{Implementation Details} \label {sec:impl details}
+\section{Implementation Details} \label {sec:impl details}
 
 While the previous sections were largely theoretical, in this section we will describe some of the
 concrete implementation decisions we have made, especially with a focus on maintaining good
@@ -828,7 +899,7 @@ perform updates for edge insertions and deletions in $O(n)$ time.
 
 \todo Maybe tools / scripts (perf, compare-results, etc.)
 
-\section{Experimental results}
+\chapter{Experimental results}
 \label{sec:experimental results}
 
 The PACE challenge provides 100 public test instances of increasing size and also maintains another
@@ -958,21 +1029,22 @@ mind, these results do match our experience developing the solver: Implementing 
 reduction was one of the biggest single improvements we have observed, even though rules 1--5 were
 implemented first (and executed much more frequently before then.)
 
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.8]{interleaved_effectiveness}
+	\caption{\% of total reduction in $k$ by source, averaged over all solved instances}
+	\label{fig:interleaved_effectiveness}
+\end{figure}
+
 \todo if there is time left, do some more testing for this perhaps
 
 \todo would also be nice to do another run with more balanced settings just to compare the
 effectiveness results
 
-\todo interleaved effectiveness fig needs to be sized nicer
-
 \todo a SLURM run is ongoing to get this graph but with stats for *all* solvable instances, update
 this when it's done
 
-\begin{figure}[h]
-	\includegraphics{interleaved_effectiveness}
-	\caption{\% of total reduction in $k$ by source, averaged over all solved instances}
-	\label{fig:interleaved_effectiveness}
-\end{figure}
+\todo
 
 \begin{itemize}
 	\item Maybe more on parameter-tuning (reduction intervals) (any graphs or something? have to see
@@ -981,7 +1053,7 @@ this when it's done
 		that wasn't worth it?
 \end{itemize}
 
-\section{Outlook \& Conclusion}
+\chapter{Outlook \& Conclusion}
 
 We plan to continue work on the solver until the submission deadline for the PACE challenge. There
 are still many potential options for improvement: Parameters for tweaking the behaviour of the
