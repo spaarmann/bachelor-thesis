@@ -12,9 +12,6 @@
 \setcounter{secnumdepth}{2}
 \setcounter{tocdepth}{2}
 
-% Generate PDF links for ToC, cite, ref, etc.
-\usepackage{hyperref}
-
 % This somehow takes advantage of pdftex features and magically make the document typeset nicer,
 % for example it's managed to resolve an underfull hbox warning on its own.
 \usepackage{microtype}
@@ -47,6 +44,12 @@
 \cfoot{}
 \rfoot{}
 \renewcommand{\headrulewidth}{0pt}
+
+% Generate PDF links for ToC, cite, ref, etc, set PDF metadata, some settings for the links
+\usepackage[unicode=true,bookmarks=true,bookmarksnumbered=true,bookmarksopen=false,breaklinks=false,
+	pdfborder={0 0 0},pdfborderstyle={},backref=false,colorlinks=true]{hyperref}
+\hypersetup{pdftitle={Algorithm Engineering for Cluster Editing},pdfauthor={Sebastian Paarmann},
+	 linkcolor=blue, citecolor=blue, urlcolor=blue, pdfstartview=XYZ, plainpages=false}
 
 % Prevent single first or last lines of a paragraph appearing alone at the top or bottom
 % of a page.
