@@ -217,7 +217,7 @@ find an optimal solution, i.e.\ a solution with the smallest amount of edits pos
 In the \textsc{Weighted Cluster Editing} problem, instead of the unweighted graph, the input
 contains a weighted graph encoded by the weight function $s\colon \binom{V}{2} \to \mathbb{Z}$. The
 cost of a cluster editing $F$ is then $\sum_{e \in F} \abs{s(e)}$. Our solver is intended for the
-unweighted problem, as required by the PACE challenge, but it interally converts its input into a
+unweighted problem, as required by the PACE challenge, but it internally converts its input into a
 weighted problem instance for more efficient solving. It could be adapted to take a weighted
 instance with minimal modifications. One can also consider the weighted problem with real-valued
 weights, but we will not do so further here.
@@ -370,7 +370,7 @@ degree} of a vertex to give a $2k$ kernel which runs in $O(nm)$ time.
 
 In 2015 Hartung and Hoos developed and published a \textsc{Cluster Editing} solver that outperforms
 previous implementations~\cite{HartungHoos}. They use the \emph{Programming by Optimization}
-paradigm, using automated methods to optimize algorithm behaviour and parameter choice and guide
+paradigm, using automated methods to optimize algorithm behavior and parameter choice and guide
 further manual optimization effort based on empirical tests, to create an implementation that relies
 mainly on a reduction technique that is worse than newer ones from a theoretical point of view but
 is able to produce significant runtime improvements in practice on their varied test data.
@@ -1009,7 +1009,7 @@ is explored, whenever $k$ is reduced due to some operation, we attribute this re
 mentioned causes. If we exit early from some brunch, due to our lower bounds, the remaining
 parameter is attributed to ``early exit''. Note that this measurement is hardly perfect. For example
 exiting early with parameter $k$ attributes $k$ to early exit, but if we had explored the tree
-further down this path, there would have been more reduction observerd in total, so the effect of
+further down this path, there would have been more reduction observed in total, so the effect of
 early exiting is in some way underrepresented. We have also implemented a much more accurate and
 detailed form of collecting statistics around the effectiveness of reductions, but it is
 unfortunately much harder to analyze, and, more importantly, incurs so much overhead in its current
@@ -1022,7 +1022,7 @@ large portion of our performance. To some extent this likely just reflects our c
 parameters for the solver: We execute rules 1--5 only once every 200 nodes along a path in the tree,
 while we execute the induced cost reductions at every single node. Even on the nodes where we
 execute the full reduction, we first execute the induced cost reduction followed by rules 1--5. Our
-testing so far has shown these settings to be effective in achieving good runtimes on our test
+testing so far has shown these settings to be effective in achieving good runtime on our test
 instance, but it is possible a different combination could lead to still improved performance,
 perhaps resulting in a more balanced mix in the effectiveness of the reductions. Even with that in
 mind, these results do match our experience developing the solver: Implementing the induced cost
@@ -1056,7 +1056,7 @@ this when it's done
 \chapter{Outlook \& Conclusion}
 
 We plan to continue work on the solver until the submission deadline for the PACE challenge. There
-are still many potential options for improvement: Parameters for tweaking the behaviour of the
+are still many potential options for improvement: Parameters for tweaking the behavior of the
 solver can be optimized. There is likely room for optimization in the existing implementation. More
 reduction rules can be implemented and tested, as well as the strategy for applying the current ones
 improved. We are also planning to try the more advanced branching strategies by Böcker et
