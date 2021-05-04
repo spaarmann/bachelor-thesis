@@ -1111,10 +1111,35 @@ implemented first (and executed much more frequently before then).
 %\todo would also be nice to do another run with more balanced settings just to compare the
 %effectiveness results
 
-We have also experimented with some techniques that were ultimately not included in the current
-solver. We already mentioned above our experiments regarding the graph data structure and that a
-better one could potentially be advantageous but our ideas and tests so far have not been
-successful.
+\paragraph{An unsolved graph} As a short example that even relatively small graphs can be hard to
+solve optimally, we show the ``exact013'' graph from the PACE public test instances in
+Figure~\ref{fig:exact013}. The graph has 40 vertices and 297 edges and is the smallest of the test
+instances which we have not yet solved. A full single clique with 40 vertices would have 780 edges,
+so while the graph does look fairly well connected, it is a good way off from that: such an editing
+would require 483 edits. On the right side of the figure we show the result of a cluster editing
+with 201 edits, which may however not be optimal. From our long test runs we know an optimal cluster
+editing has a size of at least 161 edits. At that point, with the current algorithm, it already
+takes longer than a day to fully exhaust the search space for a given parameter.
+
+\begin{figure}[h]
+	\centering
+	\begin{subfigure}{0.49\textwidth}
+		\includegraphics[width=1.0\linewidth]{exact013-input}
+		\subcaption{Input Graph}
+	\end{subfigure}
+	\begin{subfigure}{0.49\textwidth}
+		\includegraphics[width=1.0\linewidth]{exact013-output-inexact}
+		\subcaption{Result of a cluster editing}
+	\end{subfigure}
+	\caption{Graph ``exact013'' and the graph resulting from \emph{a} cluster editing, possibly not
+	an optimal one}
+	\label{fig:exact013}
+\end{figure}
+
+\paragraph{Unsuccessful Tests} We have also experimented with some techniques that were ultimately
+not included in the current solver. We already mentioned above our experiments regarding the graph
+data structure and that a better one could potentially be advantageous but our ideas and tests so
+far have not been successful.
 
 Our solver splits the input graph into its connected components and processes them individually once
 at the start, but does not attempt to do so again while solving. In theory it is possible to handle
