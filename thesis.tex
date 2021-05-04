@@ -300,18 +300,16 @@ more efficient trees are possible.
 
 \chapter{Previous Work}
 
-%todo Maybe change listing of 3 authors to et al.?
-
 Clustering problems in general have a very long history, so we will focus only on the specific
-\textsc{Cluster Editing} problem as formulated above. In 1999, Ben-Dor, Shamir, and
-Yakhini~\cite{BenDor} introduced the unweighted problem in order to perform clustering on gene
-expression patterns. They provided a stochastic model for the corruption of the true clustering
-introduced by measurements and present an $O(n^2 \log(n)^c)$ time algorithm that reconstructs the
-true clustering with high probability, as well as a heuristic approach based on a similar idea. Many
-other approaches for clustering gene expression data had been proposed and investigated already at
-this time, see \cite{ShamirOverview} for an overview from 2001.
+\textsc{Cluster Editing} problem as formulated above. In 1999, Ben-Dor et al.~\cite{BenDor}
+introduced the unweighted problem in order to perform clustering on gene expression patterns. They
+provided a stochastic model for the corruption of the true clustering introduced by measurements and
+present an $O(n^2 \log(n)^c)$ time algorithm that reconstructs the true clustering with high
+probability, as well as a heuristic approach based on a similar idea. Many other approaches for
+clustering gene expression data had been proposed and investigated already at this time, see
+\cite{ShamirOverview} for an overview from 2001.
 
-Shamir, Sharan, and Tsur~\cite{ShamirModifications} investigated \textsc{Cluster Editing} as well as
+Shamir et al.~\cite{ShamirModifications} investigated \textsc{Cluster Editing} as well as
 the related \textsc{Cluster Completion} (only edge insertions allowed) and \textsc{Cluster Deletion}
 (only edge deletions allowed) problems further. They showed that \textsc{Cluster Completion} can be
 solved in polynomial time, and \textsc{Cluster Deletion} is NP-hard to approximate to within some
@@ -322,11 +320,11 @@ clusters as input, which we will not further discuss here. Gramm et al.~\cite{Gr
 that the NP-completeness of \textsc{Cluster Editing} can already be derived from the work of
 Křivánek and Morávek~\cite{Krivanek}, published in 1986.
 
-Bansal, Blum, and Chawla independently researched a group of problems they call \textsc{Correlation
+Bansal et al.\ independently researched a group of problems they call \textsc{Correlation
 Clustering}~\cite{Bansal}. In this formulation, ``minimizing disagreements'' between the input
 labelling and the output clustering is equivalent to the unweighted \textsc{Cluster Editing}
 problem, which they gave a constant-factor approximation for. This result was improved on in 2005 by
-Charikar, Guruswami, and Wirth~\cite{Charikar}, who showed the problem to be APX-hard and gave an
+Charikar et al.~\cite{Charikar}, who showed the problem to be APX-hard and gave an
 approximation with a constant factor of 4.
 
 In 2003 Gramm et al.~\cite{Gramm} gave initial results regarding fixed-parameter approaches for
@@ -377,11 +375,11 @@ part of a kernel allow constructing and proving a faster search tree algorithm. 
 often developed as a single work. Such it is for the first kernel given by Gramm et al.~\cite{Gramm},
 which has at most $2k^2 + k$ vertices and can be computed in $O(n^3)$ time.
 
-Protti, da Silva, and Szwarcfiter~\cite{Protti} gave a kernel with at most $2k^2 + 4k$
-vertices, slightly worse than that of Gramm et al.\ but still $O(k^2)$. It is based on the modular
-decomposition of a graph and has the advantage of only requiring running time $O(n + m)$. In 2007,
-Fellows et al.\ introduced a ``crown-type structural reduction rule''~\cite{Fellows} and showed it
-can be used to construct a kernel with $6k$ vertices that can be computed in polynomial time.
+Protti et al.~\cite{Protti} gave a kernel with at most $2k^2 + 4k$ vertices, slightly worse than
+that of Gramm et al.\ but still $O(k^2)$. It is based on the modular decomposition of a graph and
+has the advantage of only requiring running time $O(n + m)$. In 2007, Fellows et al.\ introduced a
+``crown-type structural reduction rule''~\cite{Fellows} and showed it can be used to construct a
+kernel with $6k$ vertices that can be computed in polynomial time.
 
 Based on both the ideas of the crown-type reduction and the concept of \emph{critical cliques},
 which had already been used for good effect in fixed-parameter approaches to other problems,
@@ -1215,8 +1213,6 @@ S. Böcker, S. Briesemeister, Q. B. A. Bui, and A. Truss, “Going Weighted: Par
 Algorithms for Cluster Editing,” in Combinatorial Optimization and Applications, Berlin, Heidelberg,
 2008, pp. 1–12, doi: 10.1007/978-3-540-85097-7\_1.
 
-% TODO: We mention this as being from 2008 in the text, should cite the actual version published
-% then probably.
 \bibitem{ExactAlgos}
 S. Böcker, S. Briesemeister, and G. W. Klau, “Exact Algorithms for Cluster Editing: Evaluation
 and Experiments,” Algorithmica, vol. 60, no. 2, pp. 316–334, Jun. 2011, doi:
