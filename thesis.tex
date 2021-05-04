@@ -158,15 +158,16 @@ Some acknowledgments I still have to write at some point.
 
 \chapter{Introduction}
 
-A \emph{cluster} graph, also called \emph{transitive} graph, is a graph which consists only of
+A \emph{cluster} graph, also called a \emph{transitive} graph, is a graph which consists only of
 disjoint cliques. In the \textsc{Cluster Editing} problem, the input is an undirected graph $G$ and
-an integer $k$ greater $0$, and the question is whether the $G$ can be made into a cluster graph
-using $k$ or less \emph{edge edits}. An edit is either inserting an edge or deleting an existing
-one. We also consider the \textsc{Weighted Cluster Editing} problem: The input has weights for each
-edge and non-edge, which are the deletion and insertion costs respectively. The question is then
-whether there is a solution with total edit costs at most $k$. See Figure~\ref{fig:exact001} for an
-example, left is the first and smallest test instance used while developing the solver and right is
-the cluster graph resulting from an optimal solution.
+an integer $k$ greater $0$, and the question is whether $G$ can be made into a cluster graph using
+$k$ or less \emph{edge edits}. An edit is either inserting an edge or deleting an existing one. We
+also consider the \textsc{Weighted Cluster Editing} problem: The input has weights for each pair of
+vertices, both edges and non-edges, which are the deletion and insertion costs respectively. The
+question is then whether there is a solution with total edit costs at most $k$. See
+Figure~\ref{fig:exact001} for an example: On the left is the first and smallest test instance used
+while developing the solver that is subject of this thesis and right is the cluster graph resulting
+from an optimal solution.
 
 \begin{figure}[h]
 	\centering
@@ -186,52 +187,53 @@ the cluster graph resulting from an optimal solution.
 
 For this thesis, we have implemented a \textsc{Cluster Editing} solver as a submission to the
 Parameterized Algorithms and Computational Experiments (PACE) Challenge 2021~\cite{Pace}. Among
-other goals, the PACE challenge aims to result in easily available performant implementations to the
-posed problems while also encouraging new theoretical developments. In the 2021 challenge, there are
-three different tracks for tackling different aspects of the problem: The exact track asks to find
-an optimal solution for a given graph as quickly as possible, the heuristic track asks to find a
-solution that is as good as possible within a time limit, and the kernelization track asks to reduce
-an input graph into a smaller equivalent instance. Our implementation is intended for the exact
-track.
+other goals, the aims of the PACE challenge include producing freely available performant
+implementations to the posed problems while also encouraging new theoretical developments. In the
+2021 challenge, there are three different tracks for tackling different aspects of the problem: The
+\emph{exact} track asks to find an optimal solution for a given graph as quickly as possible, the
+\emph{heuristic} track asks to find a solution that is as good as possible within a time limit, and
+the \emph{kernelization} track asks to reduce an input graph into a smaller equivalent instance. Our
+implementation is intended for the exact track.
 
 \textsc{Cluster Editing} was initially introduced in the context of bioinformatics to clean data
 containing measurement errors by clustering gene expression patterns~\cite{BenDor}. It has since
-been applied for a variety of problems in bioinformatics, including around sequencing genes,
-comparative transcriptomics, metabolic profiling in spectrometry data, and
-more~\cite{BoeckerBaumbach}. As one case of the \textsc{Correlation Clustering} problem, applications
-have also been found in machine learning contexts, for example to perform deduplication of
+been applied to a variety of problems in bioinformatics, including gene sequencing, comparative
+transcriptomics, metabolic profiling in spectrometry data, and more~\cite{BoeckerBaumbach}. The
+\textsc{Correlation Clustering} problem, of which \textsc{Cluster Editing} is one important special
+case, has applications in machine learning contexts, for example to perform deduplication of
 data~\cite{Bansal}.
 
 \chapter{Preliminaries}
 
 First, some terms and notation used throughout this thesis: A graph $G = (V, E)$ has a vertex set
-$V$ and edge set $E \subseteq \binom{V}{2}$. Graphs are simple graphs, i.e.\ they contain no
-self-loops or parallel edges. We abbreviate an edge or non-edge $\{u, v\} \in \binom{V}{2}$ as $uv$.
-We denote the (open) neighborhood of a vertex $v$ in $G$ as $N_G(v) = \{ u \in V \mid uv \in E\}$.
-Similarly, $N_G[v]$ is the closed neighborhood of~$v$, i.e.\ $N_G(v) \cup \{v\}$. If it is clear
-which graph is meant, we may also just write $N(v)$ and $N[v]$. For a set $U \subseteq V$, $G[U]$ is
-the subgraph induced by $U$ on $G$, i.e.\ $G[U] = (U, \{ uv \in E \mid u \in U \land v \in U \})$. A
-clique in general is a fully connected graph. A clique in a graph $G$ is a fully connected induced
+$V$ and an edge set $E \subseteq \binom{V}{2}$. Graphs are simple graphs, i.e.\ they contain no
+self-loops (an edge connecting a vertex with itself) or parallel edges. We abbreviate an edge or
+non-edge $\{u, v\} \in \binom{V}{2}$ as $uv$. We denote the \emph{(open) neighborhood} of a vertex
+$v$ in $G$ as $N_G(v) = \{ u \in V \mid uv \in E\}$. Similarly, $N_G[v]$ is the \emph{closed
+neighborhood} of~$v$, i.e.\ $N_G(v) \cup \{v\}$. If it is clear which graph is meant, we may also
+just write $N(v)$ and $N[v]$. For a set $U \subseteq V$, $G[U]$ is the subgraph \emph{induced} by
+$U$ on $G$, i.e.\ $G[U] = (U, \{ uv \in E \mid u \in U \land v \in U \})$. In general, a
+\emph{clique} is a fully connected graph. A clique in a graph $G$ is a fully connected induced
 subgraph of $G$. A weighted graph is characterized by a weight function $s\colon \binom{V}{2} \to
 \mathbb{Z}$. We consider $uv$ to be an edge if $s(uv) > 0$ and $uv$ to be a non-edge if $s(uv) \leq
 0$. We write $A \Delta B$ for the symmetric difference of two sets $A$ and $B$: $A \Delta B = (A
 \setminus B) \cup (B \setminus A)$.
 
 Formally the \textsc{Cluster Editing} problem can be described as follows: The input $(G, k)$
-consists of a simple unweighted graph $G = (V, E)$ and parameter $k \in \mathbb{N}$. The task is to
-find a cluster editing $F$ with cost less than $k$. A set $F \subseteq \binom{V}{2}$ is a cluster
-editing for $G$ if the graph $(V, E \Delta F)$ is a cluster graph, i.e.\ a disjoint union of
-cliques. The \emph{cost} of a cluster editing $F$ is $\abs{F}$. In the PACE challenge, we want to
-solve the optimization version of this problem: The input is only a graph $G$ and the goal is to
-find an optimal solution, i.e.\ a solution with the smallest amount of edits possible.
+consists of a simple unweighted graph $G = (V, E)$ and parameter $k \in \mathbb{N}$. A set $F
+\subseteq \binom{V}{2}$ is a \emph{cluster editing} for $G$ if the graph $(V, E \Delta F)$ is a
+cluster graph, i.e.\ a disjoint union of cliques. The \emph{cost} of a cluster editing $F$ is
+$\abs{F}$. The task is to find a cluster editing $F$ with cost less than $k$. In the PACE challenge,
+we want to solve the optimization version of this problem: The input is only a graph $G$ and the
+goal is to find an optimal solution, i.e.\ a solution with the smallest amount of edits possible.
 
-In the \textsc{Weighted Cluster Editing} problem, instead of the unweighted graph, the input
-contains a weighted graph encoded by the weight function $s\colon \binom{V}{2} \to \mathbb{Z}$. The
-cost of a cluster editing $F$ is then $\sum_{e \in F} \abs{s(e)}$. Our solver is intended for the
-unweighted problem, as required by the PACE challenge, but it internally converts its input into a
-weighted problem instance for more efficient solving. It could be adapted to take a weighted
-instance with minimal modifications. One can also consider the weighted problem with real-valued
-weights, but we will not do so further here.
+In the \textsc{Weighted Cluster Editing} problem, instead of an unweighted graph, the input contains
+a weighted graph encoded by the weight function $s\colon \binom{V}{2} \to \mathbb{Z}$. The cost of a
+cluster editing $F$ is then $\sum_{e \in F} \abs{s(e)}$. Our solver is intended for the unweighted
+problem, as required by the PACE challenge, but it internally converts its input into a weighted
+problem instance for more efficient solving. It could be adapted to take a weighted instance with
+minimal modifications. One can also consider the weighted problem with real-valued weights, but we
+will not do so further here.
 
 \textsc{Cluster Editing} is NP-complete~\cite{ShamirModifications}, so there is no polynomial time
 algorithm for solving it (unless P = NP). It is however \emph{fixed-parameter tractable}.
@@ -244,29 +246,30 @@ maximum degree in a graph) or a limit on the size of the solution. In this way t
 increase in runtime can be contained in the parameter, instead of the algorithm scaling
 exponentially with the input size. More detailed information can be found e.g.\ in the book of Cygan
 et al.~\cite{ParameterizedAlgorithms}. In our case $k$ describes the maximum amount of edits, i.e.\
-the maximum size of the solution, and $n$ is $\abs{G}$. To solve the optimization problem that is
-required by the PACE challenge with a parameterized FPT algorithm, we simply execute the algorithm
-in a loop starting with $k = 1$ and increase $k$ until we find a solution.
+the maximum size of the solution, while $n$ is some measure of the graph size, for example
+$\abs{V}$. To solve the optimization problem that is required by the PACE challenge with a
+fixed-parameter algorithm, we simply execute the algorithm in a loop starting with $k = 1$ and
+increase $k$ until we find a solution.
 
 We make use of some important techniques from the field of parameterized algorithms, mainly
 \emph{kernels} and data reduction rules, and \emph{bounded search trees}. Data reduction rules take
 as input a problem instance, including a parameter, and produce a second instance that is equivalent
-to the input one. Two instances are equivalent if there is a solution for the second if and only if
-there is also a solution for the first instance. Clearly, the goal is to return an instance that is
+to the first one. Two instances are equivalent if there is a solution for the second if and only if
+there is also a solution for the first instance. The goal then is to return an instance that is
 in some way \emph{easier}, for example by making the input smaller or reducing the parameter. We
-describe the various reduction rules used in our algorithm in section~\ref{sec:reduction}. A
-kernel is a preprocessing algorithm which gives an upper bound on the size of the returned instance
-in terms of the input parameter $k$. Kernels are often implemented in terms of multiple reduction
-rules that are repeatedly applied.
+describe the various reduction rules used in our algorithm in section~\ref{sec:reduction}. A kernel
+is a preprocessing algorithm to reduce the size of a problem instance for which an upper bound on
+the size of the returned instance can be given in terms of the input parameter $k$. Kernels are
+often implemented by using multiple reduction rules that are repeatedly applied.
 
 Apart from the reduction rules, the general shape of the algorithm we implement is that of a bounded
 search tree algorithm, also called a branching algorithm. This is essentially the idea of
 backtracking: The algorithm takes some decision regarding the solution (e.g.\ adding or removing an
 edge) and then recursively executes on the resulting instance. If that recursive call does not yield
-a solution, a different decision is taken instead and the procedure repeated. If it can be
+a solution, a different decision is taken instead and the procedure is repeated. If it can be
 guaranteed that some sequence of decisions will lead to a solution if one exists, this kind of
 algorithm correctly solves the problem. It can be viewed as recursively moving through a search tree
-where each ``decision point'' is a node. As the name says, the search tree should also be bounded:
+where each node is a ``decision point''. As the name suggests, the search tree should also be bounded:
 There should be a limit on the amount of branches taken in each node as well as a guarantee that
 after each decision the instance is substantially simpler such that we will eventually reach a leaf
 node where the solution (or its non-existence) is trivial.
@@ -278,21 +281,22 @@ node where the solution (or its non-existence) is trivial.
 	\label{fig:conflicts}
 \end{figure}
 
-We call three vertices $v, u, w \in V$ a \emph{conflict triple} if $uv, uw \in E, vw \notin E$,
-i.e.\ the vertices form an induced $P_3$. A central observation regarding the \textsc{Cluster
-Editing} problem is that a graph $G = (V, E)$ is a cluster graph if and only if there is no
-conflict triple in the graph: If there is a conflict, $v, u,$ and $w$ are all part of the same
-connected component, but this component is not a clique because $vw \notin E$. One can also
-immediately see that if each connected component is a clique, there cannot be a conflict triple.
+As an example, let us describe a simple search tree algorithm for \textsc{Cluster Editing}. We call
+three vertices $v, u, w \in V$ a \emph{conflict triple} if $uv, uw \in E, vw \notin E$, i.e.\ the
+vertices form an induced $P_3$. A central observation regarding the \textsc{Cluster Editing} problem
+is that a graph is a cluster graph if and only if there is no conflict triple in the graph: If there
+is a conflict, $v, u,$ and $w$ are all part of the same connected component, but this component is
+not a clique because $vw \notin E$. One can also immediately see that if each connected component is
+a clique, there cannot be a conflict triple.
 
-This leads to a very simple search tree algorithm: The problem can be solved by recursively
-searching for a conflict triple and branching into three cases: Add $vw$, remove $uv$, or remove
-$uw$. These are the only ways of resolving a conflict, and once there are no more conflicts, a
-solution can be returned. Looking at our criteria for a bounded search tree from above, this has a
-limit on the branches per node, exactly three. And for each branch we perform an edit on the graph
-and thus reduce $k$ by 1, limiting the depth of the search. This algorithm gives a search tree of
-size $O(3^k)$, though we will see in the next sections that more efficient trees are possible. The
-basic idea of this branching strategy is illustrated in Figure~\ref{fig:conflicts}.
+This leads directly to a search tree algorithm: The problem can be solved by recursively searching
+for a conflict triple and branching into three cases: add $vw$, remove $uv$, or remove $uw$, as
+illustrated in Figure~\ref{fig:conflicts}. These are the only ways of resolving a conflict, and once
+there are no more conflicts, a solution can be returned. Looking at our criteria for a bounded
+search tree from above, this has a limit on the branches per node, exactly three. And for each
+branch we perform an edit on the graph and thus reduce $k$ by 1, limiting the depth of the search.
+This algorithm gives a search tree of size $O(3^k)$, though we will see in the next sections that
+more efficient trees are possible.
 
 \chapter{Previous Work}
 
@@ -302,8 +306,8 @@ Clustering problems in general have a very long history, so we will focus only o
 \textsc{Cluster Editing} problem as formulated above. In 1999, Ben-Dor, Shamir, and
 Yakhini~\cite{BenDor} introduced the unweighted problem in order to perform clustering on gene
 expression patterns. They provided a stochastic model for the corruption of the true clustering
-introduced by measurements and present an $O(n^2 \log(n)^c)$ algorithm that reconstructs the true
-clustering with high probability, as well as a heuristic approach based on a similar idea. Many
+introduced by measurements and present an $O(n^2 \log(n)^c)$ time algorithm that reconstructs the
+true clustering with high probability, as well as a heuristic approach based on a similar idea. Many
 other approaches for clustering gene expression data had been proposed and investigated already at
 this time, see \cite{ShamirOverview} for an overview from 2001.
 
@@ -321,22 +325,22 @@ Křivánek and Morávek~\cite{Krivanek}, published in 1986.
 Bansal, Blum, and Chawla independently researched a group of problems they call \textsc{Correlation
 Clustering}~\cite{Bansal}. In this formulation, ``minimizing disagreements'' between the input
 labelling and the output clustering is equivalent to the unweighted \textsc{Cluster Editing}
-problem, which they give a constant-factor approximation for. This result was improved on in 2005 by
-Charikar, Guruswami, and Wirth~\cite{Charikar}, who showed the problem to be APX-hard and give an
+problem, which they gave a constant-factor approximation for. This result was improved on in 2005 by
+Charikar, Guruswami, and Wirth~\cite{Charikar}, who showed the problem to be APX-hard and gave an
 approximation with a constant factor of 4.
 
 In 2003 Gramm et al.~\cite{Gramm} gave initial results regarding fixed-parameter approaches for
 \textsc{Cluster Editing} specifically. Before that, Cai~\cite{Cai} investigated fixed-parameter
 tractability of graph modification problems characterized by forbidden subgraphs in a more general
-sense, the results of which imply an $O(k^3 * \abs{G}^4)$ algorithm for \textsc{Cluster Editing}.
-Gramm et al.\ gave an $O(k^3)$ kernel for the problem, as well as a straightforward $O(k^3 + n^3)$
-fixed-parameter algorithm. Additionally, they showed a more advanced branching strategy that
-improves the search tree size to $O(2.27^k)$, leading to an $O(2.27^k + n^3)$ algorithm. This
-approach was implemented in practice for the first time and empirically compared to an LP-based
-solver by Dehne et al.\ in 2006~\cite{Dehne}. They found that the $O(2.27^k)$ is indeed faster in
-practice than the simpler $O(k^3)$ branching. Gramm et al.\ also presented a method for generating
-search tree algorithms in a computer-assisted fashion and used it to show a $O(1.92^k)$ search
-tree~\cite{AutomatedSearchTree}.
+sense, the results of which imply existence of an $O(k^3 * \abs{G}^4)$ time algorithm for
+\textsc{Cluster Editing}. Gramm et al.\ gave an $O(k^3)$ vertex kernel for the problem, as well as a
+straightforward $O(k^3 + n^3)$ time fixed-parameter algorithm. Additionally, they showed a more
+advanced branching strategy that improves the search tree size to $O(2.27^k)$, leading to an
+$O(2.27^k + n^3)$ time algorithm. This approach was implemented in practice for the first time and
+empirically compared to an LP-based solver by Dehne et al.\ in 2006~\cite{Dehne}. They found that
+the $O(2.27^k)$ search tree is indeed faster in practice than the simpler $O(k^3)$ branching. Gramm
+et al.\ also presented a method for generating search tree algorithms in a computer-assisted fashion
+and used it to show a $O(1.92^k)$ search tree~\cite{AutomatedSearchTree}.
 
 Another avenue of research was started in 2007 by Rahmann et al.~\cite{Rahmann}. This introduced the
 first fixed-parameter algorithm for the weighted version of the problem, along with several data
@@ -344,28 +348,30 @@ reduction rules to speed it up. They also introduced two heuristic algorithms.
 
 Building on this, Böcker et al.\ published several papers in 2008. They introduced a variant of the
 refined branching strategy of Gramm et al.~\cite{Gramm} for the weighted problem, resulting in an
-$O(2.42^k)$ algorithm~\cite{AnApproach}. Most importantly, this is the first paper to introduce
-merging two vertices, which is an operation only possible on the weighted problem. As a result, with
-merging, Böcker et al.\ found the simpler $O(3^k)$ branching faster in practice than the refined
-branching strategy, largely due to the significant effect of merging. Merging is also the basis for
-a very simple $O(2^k)$ branching algorithm~\cite{GoingWeighted} which means the fastest practical
-approach to solving the unweighted problem is now to transform it into a weighted instance and solve
-that. The paper also immediately improved upon this with an $O(1.82^k)$ algorithm that is achieved
-by more carefully choosing which edge to branch on. This beat even the previous best theoretical
-runtime for the unweighted problem of $O(1.92^k)$. Lastly, Böcker et al.\ performed practical
-experiments with these algorithms~\cite{ExactAlgos}, comparing them with a cut-and-branch based ILP
-implementation. They found both approaches to be competitive, with different performance
-characteristics. Notably, good data reduction rules make the FPT approach feasible even for graphs
-that require several thousand edge modifications, despite the worst-case running times.
+$O(2.42^k)$ time algorithm~\cite{AnApproach}. Most importantly, this is the first paper to introduce
+the idea of merging two vertices, which is an operation only possible on the weighted problem. As a
+result, with merging, Böcker et al.\ found the simpler $O(3^k)$ branching faster in practice than
+the refined branching strategy, largely due to the significant effect of merging. Merging is also
+the basis for a surprisingly simple $O(2^k)$ branching strategy~\cite{GoingWeighted} which means the
+fastest practical approach to solving the unweighted problem is now to transform it into a weighted
+instance and solve that. The paper also immediately improved upon this with an $O(1.82^k)$ search
+tree that is achieved by more carefully choosing which edge to branch on. This beat even the
+previous best theoretical size for the unweighted problem of $O(1.92^k)$. Lastly, Böcker et al.\
+performed practical experiments with these algorithms~\cite{ExactAlgos}, comparing them with a
+cut-and-branch based integer-linear programming implementation. They found both approaches to be
+competitive, with different performance characteristics. Notably, good data reduction rules make the
+FPT approach feasible even for graphs that require several thousand edge modifications, despite the
+worst-case running times.
 
-This basic approach was improved further by Böcker and Damaschke. First, a theorem introduced by
-Damaschke~\cite{BoundedDegree} concerning the structure of graphs in which no edge is part of three
-conflict triples, was used to improve the algorithm to $O(1.76^k)$~\cite{EvenFaster}. Then
-zero-edges (which will be discussed in more detail later) can be used to show additional structural
-properties, allowing even more efficient branching for an $O(1.62^k)$ search tree~\cite{GoldenRatio}.
+This basic approach was improved further by Böcker and Damaschke. First, Damschke introduced a
+theorem concerning the structure of graphs in which no edge is part of three conflict
+triples~\cite{BoundedDegree}. This was used to improve the search tree size to
+$O(1.76^k)$~\cite{EvenFaster}. Then zero-edges (which will be discussed in more detail later) can be
+used to show additional structural properties, allowing even more efficient branching for an
+$O(1.62^k)$ search tree~\cite{GoldenRatio}.
 
 In parallel, multiple problem kernels for \textsc{Cluster Editing} have also been developed. Note
-that we discuss them here separately only to make it easier to follow, in practice the work on
+that we discuss them here separately only to make it easier to follow. In practice the work on
 kernels is often what makes the better algorithms possible: Better reduction rules introduced as
 part of a kernel allow constructing and proving a faster search tree algorithm. In fact, these are
 often developed as a single work. Such it is for the first kernel given by Gramm et al.~\cite{Gramm},
@@ -387,9 +393,9 @@ degree} of a vertex to give a $2k$ kernel which runs in $O(nm)$ time.
 In 2015 Hartung and Hoos developed and published a \textsc{Cluster Editing} solver that outperforms
 previous implementations~\cite{HartungHoos}. They used the \emph{Programming by Optimization}
 paradigm, using automated methods to optimize algorithm behavior and parameter choice and guide
-further manual optimization effort based on empirical tests, to create an implementation that relies
-mainly on a reduction technique that is worse than newer ones from a theoretical point of view but
-is able to produce significant runtime improvements in practice on their varied test data.
+further manual optimization effort based on empirical tests. Their implementation relies mainly on a
+reduction technique that is worse than newer ones in terms of theoretical asymptotic behavior but is
+able to produce significant runtime improvements in practice on their varied test data.
 
 Lastly, there are also \emph{integer linear programming} (ILP) formulations of the problem and
 associated solvers which we have already mentioned in relation to other work above. As we
@@ -420,11 +426,12 @@ section~\ref{sec:reduction}.
 
 As mentioned before, we implement a bounded search tree approach with multiple data reduction
 techniques. We currently use a very simple branching strategy: We take a conflict triple $v, u, w$
-and branch into two cases, merging $uv$ and forbidding $uv$. These operations will be described in
-more detail in the next section. This strategy was introduced by Böcker et al.~\cite{GoingWeighted}
-and shown to lead to a search tree size of $O(2.62^k)$. Böcker et al.\ also introduced more advanced
-branching strategies, with even smaller search trees which we would also like to implement but have
-not so far due to time constraints.
+and branch into two cases: merging $uv$, and forbidding $uv$. These operations will be described in
+more detail in the next section. Due to how merging leaves the final status of the edge from the
+merged vertex to $w$ open, only two branches are required. This strategy was introduced by Böcker et
+al.~\cite{GoingWeighted} and shown to lead to a search tree size of $O(2.62^k)$. As described above,
+Böcker et al.\ have also introduced more advanced branching strategies, with even smaller search
+trees, which we would also like to implement but have not so far due to time constraints.
 
 The reductions are split into several categories. There is the initial step of taking an
 unweighted instance and turning it into a reduced weighted instance. A set of parameter-independent
@@ -435,17 +442,17 @@ has started.
 
 During the recursive search, we must track the current graph, which is modified for each recursive
 step, the current value for $k$ as well as the set of edits done so far in the current branch.
-Because we modify the graph not just by inserting and deleting edges in the course of the algorithm,
-but also by merging vertices (which effectively removes a vertex; see below for details), we also
-need to keep track of which vertices in the current graph correspond to which vertices of the
-original graph. One can either keep tracking edits throughout the branching search in terms of the
-original graph, or reconstruct the edit set at the end based on the final graph and the information
-about how vertices correspond. Theoretically, the latter is more optimal in terms of runtime because
-it only needs to do some work once the solution has been found, while the former approach has a
-slight overhead while searching. Our testing has indicated the difference is negligible however and
-we currently implement the former approach. What this means in practice is that if we perform an
-edit on the graph, we also look up which original vertices correspond to the two vertices involved
-and record edits for each possible pair.
+Because we modify the graph not just by inserting and deleting edges over the course of the
+algorithm, but also by merging vertices (which effectively removes a vertex; see below for details),
+we also need to keep track of which vertices in the current graph correspond to which vertices of
+the original graph. One can either keep tracking edits throughout the branching search in terms of
+the original graph, or reconstruct the edit set at the end based on the final graph and the
+information about how vertices correspond. Theoretically, the latter is more optimal in terms of
+runtime because it only needs to do some work once the solution has been found, while the former
+approach has a slight overhead while searching. Our testing has indicated the difference is
+negligible however and we currently implement the former approach. What this means in practice is
+that if we perform an edit on the graph, we also look up which original vertices correspond to the
+two vertices involved and record edits for each possible pair.
 
 \begin{algorithm}[h]
 \caption{Driver}
@@ -456,7 +463,8 @@ and record edits for each possible pair.
 	\State $edits \gets \emptyset$
 	\ForAll{$comp \in \Call{Components}{G}$}
 		\State $instance \gets \Call{MakeWeightedInstance}{comp}$
-		\State ($instance, lb1) \gets \Call{InitialReduction}{instance}$
+		\LineComment Initial reduction both reduces the instance and gives a lower bound
+		\State $(instance, lb1) \gets \Call{InitialReduction}{instance}$
 		\State $lb2 \gets \Call{LowerBound}{instance}$
 		\State $k \gets \Call{Max}{lb1, lb2}$
 		\Repeat
@@ -536,8 +544,8 @@ is only possible in a weighted context because we need weights to ensure the res
 instance is still equivalent to the previous one: Consider a vertex $w$ adjacent to both $u$ and $v$
 with $s(uw) = 1$ and $s(vw) = 1$. If we merge $u$ and $v$ into $u'$ we need to now set $s(u'w) = 2$
 because deleting the edge $u'w$ is equivalent to deleting both original edges $uw$ and $vw$. This
-technique was introduced by Böcker et al.~\cite{AnApproach}. Let us now describe to the two basic
-operations we perform exactly:
+technique was introduced by Böcker et al.~\cite{AnApproach}. Let us now describe the two basic
+operations we perform in detail:
 
 \paragraph{Forbidding} Of the two, forbidding an edge is the much simpler operation. If $uv$
 currently exists, deleting it will generate cost. We thus reduce $k$ by $\max\{s(uv), 0\}$. If $s(uv)
@@ -548,8 +556,8 @@ forbidden and prevent it from being reintroduced later.
 Conceptually, we introduce a new vertex $u'$ and insert it into the graph while removing $u$ and
 $v$. Merged vertices are considered to have a permanent edge between them (we can't later split them
 apart again), so if $s(uv) \leq 0$, we record the edit(s) from inserting the edge. This also
-generates cost, so reduce $k$ by $\max\{-s(uv), 0\}$. Then, for all $w \in V \setminus \{u, v\}$, we
-set $s(u'w) = s(uw) + s(vw)$.
+generates cost, so we reduce $k$ by $\max\{-s(uv), 0\}$. Then, for all $w \in V \setminus \{u, v\}$,
+we set $s(u'w) = s(uw) + s(vw)$.
 
 It is possible that before the merge $uw$ existed and $vw$ did not, or vice-versa. In that case,
 this merge procedure will also effectively insert or delete one of these edges, depending on their
@@ -578,7 +586,7 @@ optimal solution, or will never be made by an optimal solution, and then take th
 thereby shrinking the remaining search space. This leads to reduction rules that are \emph{correct}
 in the sense that the reduced instance has a solution if and only if the original instance has one.
 
-\paragraph{Critical Cliques} One can obtain an equivalent weighted instance from an unweighted one,
+\paragraph{Critical Cliques} One can obtain an equivalent weighted instance from an unweighted one
 by simply setting $s(uv) = 1$ for all $uv \in E$ and $s(uv) = -1$ for all $uv \notin E$. We use a
 slightly more complex procedure that can already reduce the graph while making it weighted, based on
 the notion of \emph{critical cliques}.
@@ -599,45 +607,46 @@ the start of the algorithm, and is equivalent in that if we find an optimal solu
 we also have one for the original input.
 
 Finding the critical cliques is possible in $O(n + m)$ time. In practice we implemented a simpler
-$O(n^2)$ algorithm: Until all vertices have been assigned to a critical clique, choose one
+$O(n^2)$ time algorithm: Until all vertices have been assigned to a critical clique, choose one
 unassigned vertex to put in a new critical clique, and add every other unassigned vertex with the
 same closed neighborhood to the same critical clique. Our implementation time was constrained and
 this reduction is only ever executed once for every connected component of the input graph, so we
 focused our efforts on parts that have a more significant effect on total runtime instead of
-implementing the more complicated $O(n + m)$ algorithm.
+implementing the more complicated $O(n + m)$ time algorithm.
 
 \paragraph{Parameter-independent reduction} As described above, parameter-independent reduction can
 be applied once as reduction at the very start of the algorithm, but also during the search tree
 algorithm: After some branches in the search tree have been taken, more reduction operations may
 become applicable in the context of the current branch. Concretely, we implemented reduction
-rules~1--5 as introduced by Böcker et al.~\cite{ExactAlgos}. We repeat the rules here but omit
-proofs of runtime and give the general idea for why they are correct, along with notes about
-efficient implementation. Rules 1--3 are rather simple, so we will only give brief intuition for
-their correctness:
+rules~1--5 as introduced by Böcker et al.~\cite{ExactAlgos}. We repeat the rules here, but omit
+proofs of runtime and correctness. We do however give the general idea for why they are correct,
+along with notes about efficient implementation. Rules 1--3 are rather simple, so we will only give
+brief intuition for their correctness. A schematic representation of rules 1--3 can be seen in
+Figure~\ref{fig:rules1-3}.
 
 \subparagraph{Rule 1} \emph{(heavy non-edge rule)} Forbid a non-edge $uv$ with $s(uv) < 0$ if
 \[
 	\abs{s(uv)} \geq \sum_{w \in N(u)} s(uw).
 \]
 
-Intuitively, if adding $uv$ is more expensive than even isolating $u$ completely would be, it never
-makes sense to insert $uv$.
+Regarding correctness, if adding $uv$ is more expensive than even isolating $u$ completely would be,
+an optimal solution never inserts $uv$.
 
 \subparagraph{Rule 2} \emph{(heavy edge rule, single end)} Merge vertices $u, v$ of an edge $uv$ if
 \[
 	s(uv) \geq \sum_{w \in V \setminus \{u, v\}} \abs{s(uw)}.
 \]
 
-Intuitively, if removing $uv$ is more expensive than editing every single other edge and non-edge
-incident with $u$, it never makes sense to remove $uv$.
+Regarding correctness, if removing $uv$ is more expensive than editing every other edge and non-edge
+incident with $u$, an optimal solution never removes $uv$.
 
 \subparagraph{Rule 3} \emph{(heave edge rule, both ends)} Merge vertices $u, v$ of an edge $uv$ if
 \[
 	s(uv) \geq \sum_{w \in N(u) \setminus \{v\}} s(uw) + \sum_{w \in N(v) \setminus \{u\}} s(vw).
 \]
 
-Intuitively, if removing $uv$ is more expensive than isolating $u$ and $v$ completely (except from
-each other), it never makes sense to remove $uv$.
+Regarding correctness, if removing $uv$ is more expensive than isolating $u$ and $v$ completely
+(except from each other), an optimal solution never removes $uv$.
 
 \begin{figure}[h]
 	\centering
@@ -674,7 +683,7 @@ analyzing which $r$ values can change by a given reduction and how, we construct
 directly apply the change to all other affected $r$ values, without having to recompute any
 entirely. Note that these updates can lead to both entries being removed from and entries being
 added to the list of values $\geq 0$. For the full update procedure we refer to the source code
-associated with this thesis; there it is implemented and also described and justified in some
+associated with this thesis, where it is implemented and also described and justified in some
 detail.
 
 \subparagraph{Rule 4} \emph{(almost clique rule)} Let $k_C$ be the min-cut value of $G[C]$, for $C
@@ -742,7 +751,7 @@ partition $C_u$, $C_v$, $R$ of only $\{w_1, \dots, w_j\}$ such that
 	\sum_u C_u - \sum_u C_v = x \text{ and } \sum_v C_v - \sum_v C_u = y.
 \end{equation*}
 
-Clearly, we can then determine the maximum of (\ref{eq:goal}) as
+We can then determine the maximum of (\ref{eq:goal}) as
 \begin{equation} \label{eq:dmax}
 	\max_{D_k[x, y]='\mathrm{true}'} \min\{x, y\}.
 \end{equation}
@@ -756,13 +765,13 @@ with which we can calculate $D_k$ in $O(kXY)$ time and $O(XY)$ space:
 				& \lor D_{j-1}[x - s(u, w_j), y + s(v, w_j)]
 \end{align*}
 
-This quadratic time is clearly much better than the naive $O(\abs{W}^3)$ approach but we can in fact
-do even better with a linear time algorithm. Define $M_j[x]$ to be the \emph{maximal} index $y$
-such that $D_j[x, y]$ is 'true'. Clearly $M_0[0] = 0$ and we otherwise initialize $M_0[x] = -\infty$
-for $x \neq 0$. We can construct $M_k$ using almost the same recurrence as $D_k$:
+This quadratic time is clearly much better than the naive $O(\abs{W}^3)$ approach but we can do even
+better with a linear time algorithm. Define $M_j[x]$ to be the \emph{maximal} index $y$ such that
+$D_j[x, y]$ is 'true'. Clearly $M_0[0] = 0$ and we otherwise initialize $M_0[x] = -\infty$ for $x
+\neq 0$. We can construct $M_k$ using almost the same recurrence as $D_k$:
 \begin{equation*}
 	M_j[x]= \max \{ M_{j-1}[x], M_{j-1}[x + s(u, w_j)] - s(v, w_j), M_{j-1}[x - s(u, w_j)] + s(v,
-		w_j) \}.
+		w_j) \}
 \end{equation*}
 
 The maximum can then be computed as $\max_x \min \{x, M_k[x] \}$. This works because if we have two
@@ -837,24 +846,26 @@ to cull parts of the search tree early. To this end we calculate a lower bound $
 search tree node and discard the branch if $b(G) > k$.
 
 We use a very simple lower bound, also described by Böcker et al.~\cite{ExactAlgos}: For a set of
-edge-disjoint conflict triples $CT$, $\sum_{vuw \in CT} \min\{s(uv), s(uw), -s(vw)\}$ is clearly a
-lower bound on the cost of the whole graph. Calculating an \emph{optimal} $CT$, one that maximizes
-this sum, is expensive, but just greedily constructing a set still produces a reasonable bound (in
+edge-disjoint conflict triples $CT$, $\sum_{vuw \in CT} \min\{s(uv), s(uw), -s(vw)\}$ is a lower
+bound on the cost of the whole graph. Calculating an \emph{optimal} $CT$, one that maximizes this
+sum, is expensive, but just greedily constructing a set still produces a reasonable bound (in
 practice we actually maintain such a list throughout the algorithm instead of constructing one on
-demand, more details are in section~\ref{sec:impl details}.
+demand, more details are in section~\ref{sec:impl details}).
 
 As mentioned above, we also have use for $b(G, xy)$, a lower bound that entirely ignores $x$ and $y$
 in its computation. In principle this could be a completely separate computation, but for simplicity
-and performance reasons, we use the same set $CT$ as for $b(G)$ but ignore all conflict triples $vuw$
-where any of $v$, $u$, $w$ are equal to $x$ or $y$ when calculating the sum.
+and performance reasons, we use the same computation and set $CT$ as for $b(G)$, except we ignore
+all conflict triples $vuw$ where any of $v$, $u$, $w$ are equal to $x$ or $y$ when calculating the
+sum.
 
 \section{Implementation Details} \label {sec:impl details}
 
 While the previous sections were largely theoretical, in this section we will describe some of the
 concrete implementation decisions we have made, especially with a focus on maintaining good
-performance: Clearly, good algorithmic approaches are necessary to tackle any NP-complete problem,
-but efficient implementation can also make a significant difference. As the first decision to make,
-we chose Rust~\cite{Rust} as our implementation language. Rust is a modern language that can produce
+performance: Good algorithmic approaches are necessary to tackle any NP-complete problem, but
+efficient implementation can also make a significant difference. 
+
+We chose Rust~\cite{Rust} as our implementation language. Rust is a modern language that can produce
 well optimized native code with performance similar to e.g.\ C++, while also providing memory
 safety, a more advanced type system, and other features that allow greater productivity. 
 
@@ -866,12 +877,12 @@ weights.
 While this is a very space-efficient form, testing quickly revealed it is actually much more
 efficient to simply store a full rectangular matrix which stores each weight twice, at least as long
 as this doesn't lead to excessive memory usage. We expect the difference largely comes from cheaper
-reads of the matrix: In the general case, reading the weight associated with two arbitrary vertices
-requires a branch (or at least finding which vertex index is the smaller one) to calculate the
-correct index into the triangular matrix while reading from the full matrix only requires a
-multiplication and an addition. To an extent this can be mitigated by taking advantage of access
-patterns where the relative ordering of the vertices is known statically. We generally tried to
-utilize such patterns where possible, but even so, the full rectangular matrix approach was
+reads of weights in the matrix: In the general case, reading the weight associated with two
+arbitrary vertices requires a branch (or at least finding which vertex index is the smaller one) to
+calculate the correct index into the triangular matrix, while reading from the full matrix only
+requires a multiplication and an addition. To an extent this can be mitigated by taking advantage of
+access patterns where the relative ordering of the vertices is known statically. We generally tried
+to utilize such patterns where possible, but even so, the full rectangular matrix approach was
 significantly faster. Note that paying attention to the same access patterns is still worthwhile
 however, as they also improve access locality and predictability when iterating with the rectangular
 matrix.
@@ -883,17 +894,17 @@ experimented with hybrid approaches to graph storage, with both an adjacency mat
 lists. In our tests, the overhead of maintaining the adjacency lists outweighed any benefit in
 iteration time however. Abu-Khzam et al.~\cite{AbuKhzam} discuss an interesting hybrid
 representation specifically designed to facilitate efficient branch-and-reduce search algorithms. It
-enables very fast implementation of several common operations, including ``undo'' of them when
+enables very fast implementation of several common operations, as well as ``undo''ing them when
 moving on to another branch. Unfortunately, significant parts of it are not immediately applicable
-for weighted graphs, reducing its effectiveness in our setting. Within the bounds of this thesis we
+to weighted graphs, reducing its effectiveness in our setting. Within the bounds of this thesis we
 ultimately stick with the rectangular weight matrix, but this avenue is nevertheless promising if a
 similar representation that supports weighted graphs could be found.
 
 We also note that we currently store all weights as floating-point numbers. This is perhaps not
-entirely expected as we specifically only handle integer-weighted instance and also avoid producing
+entirely expected as we specifically only handle integer-weighted instances and also avoid producing
 any non-integer weights over the course of the algorithm. We use them mainly because it makes it
 very convenient to deal with any infinities we use as weights. Floating point numbers can be
-positive or negative infinity and handling that correctly is built-in to the hardware. For example
+positive or negative infinity and handling that correctly is built into the hardware. For example
 summing many weights together should result in $-\infty$ if any of those weights are $-\infty$.
 Storing integers and doing this manually is more complex in terms of writing and maintaining the
 code and also seems likely to be slower at runtime than the native hardware handling.
@@ -914,12 +925,12 @@ those of $v$.
 
 \paragraph{Undo} Over the course of the algorithm, we explore a large search tree of possible
 operations to find the optimal solution. At any fork point, the solver first takes one branch and
-searches further, and, if that did not give a solution, then tries the other branch. To take the
-second branch, we need to again have the initial state at the fork point available to proceed from.
-A very simple way to achieve this is to simply clone the entire relevant state before taking the
-first branch. This is however very inefficient: Not only is cloning every time expensive in terms of
-runtime, it also leads to a large amount of memory usage because the full set of previous states has
-to be kept around while descending the tree until a leaf is reached.
+searches further. If no solution can be found in that branch, it then tries the other branch. To
+take the second branch, we need to again have the initial state at the fork point available to
+continue from. A very simple way to achieve this is to simply clone the entire relevant state before
+taking the first branch. This is however very inefficient: Not only is cloning repeatedly expensive
+in terms of runtime, it also leads to a large amount of memory usage because the full set of
+previous states has to be kept around while descending the tree until a leaf is reached.
 
 To avoid this, we instead track a list of operations done on the graph (setting a weight, and
 marking a vertex as not present), along with the information needed to undo it (the two vertices and
@@ -954,7 +965,12 @@ and developed it against the 100 public instances, numbered 1, 3, \dots, 199. We
 computed optimal solutions for 34 of them overall, and can compute 31 of those within the 30 minutes
 per instance time limit set by the challenge. See Figure~\ref{fig:instances} for an overview of
 instance size measured in vertex count as well as which instance we have solved on the left and, for
-the instances we have solved, the size of an optimal solution on the right.
+the instances we have solved, the size of an optimal solution on the right. We performed our tests
+on the HPC cluster of the TUHH using nodes with Intel Xeon E5-2670 and E5-2670v2 processors and
+running CentOS 7.9. We used a "nightly" version of rustc 1.53.0, due to our use of one
+not-quite-stable standard library API. Specifically for the tests on the cluster we used nightly
+rustc 2021-03-24. The longest tests we did ran for 7 days and resulted in the mentioned 34 instances
+being solved, with the last solved instance finishing after 1 day and about 16 hours.
 
 \begin{figure}[h]
 	\begin{subfigure}{0.49\textwidth}
@@ -995,7 +1011,7 @@ We present the same statistics for rules 1--5 applied together and for the compl
 reduction in Figures~\ref{fig:rules1-5 eff} and~\ref{fig:initial eff}. Note that rule 1 forbids
 edges instead of merging vertices, so it does not have a direct effect on these graphs (it may still
 enable other reduction steps however). We observe that many of the larger peaks occur for the same
-instance for both the critical clique reduction and rules 1--5. With Figure~\ref{fig:initial eff} we
+instance for both the critical clique reduction and rules 1--5. In Figure~\ref{fig:initial eff} we
 can see that overall reduction is in fact most effective with all reductions enabled, as expected.
 Considering the negligible runtime of the reductions on graphs of the size used in the challenge, it
 is definitely reasonable to always run the full set.
@@ -1063,8 +1079,8 @@ implementation that it is impractical to use for anything but the smallest and e
 instances.
 
 With that in mind, Figure~\ref{fig:interleaved_effectiveness} summarizes the results of the
-described estimation. Clearly, with our current settings, the induced cost reduction provides a very
-large portion of our performance. To some extent this likely just reflects our current choice of
+described estimation. With our current settings, the induced cost reduction provides a very large
+portion of our performance. To some extent this likely just reflects our current choice of
 parameters for the solver: We execute rules 1--5 only once every 200 nodes along a path in the tree,
 while we execute the induced cost reductions at every single node. Even on the nodes where we
 execute the full reduction, we first execute the induced cost reduction followed by rules 1--5. Our
@@ -1098,8 +1114,8 @@ each component separately whenever one component is split into two while branchi
 reduction, and some previous work suggests doing so. This intuitively seems like a good way to
 improve performance, as it means that after each split, reduction rules and other parts of the
 algorithm can work on a smaller graph, which is generally faster. In our implementation so far, we
-have however found it to cause a decrease in performance overall, though we cannot exclude the
-possibility that this is only due to inefficient implementation of the technique on our part.
+have however found it to decrease performance overall, though we cannot exclude the possibility that
+this is only due to inefficient implementation of the technique on our part.
 
 We tested a weighted variant of the $k+1$ rule that Hartung and Hoos found very effective in an
 unweighted context~\cite{HartungHoos}. The unweighted rule is that if two vertices $u$ and $v$ are
@@ -1114,7 +1130,7 @@ where this rule could apply.
 \chapter{Outlook \& Conclusion}
 
 We plan to continue work on the solver until the submission deadline for the PACE challenge. There
-are still many potential options for improvement: Parameters for tweaking the behavior of the
+are still many potential options for improvement. Parameters for tweaking the behavior of the
 solver can be optimized. There is likely room for optimization in the existing implementation. More
 reduction rules can be implemented and tested, as well as the strategy for applying the current ones
 improved. We are also planning to try the more advanced branching strategies by Böcker et
@@ -1140,7 +1156,8 @@ performance in mind.
 The solver will be submitted to the Parameterized Algorithms and Computational Experiments Challenge
 2021. Results, including comparison to other submissions, are expected in July 2021. The solver and
 its complete source code will be available through the PACE submission, as well as on the personal
-repository of the author \footnote{https://github.com/spaarmann/cluster-editing}.
+repository of the author \footnote{https://github.com/spaarmann/cluster-editing, the state as of the
+writing of this thesis is tagged as 'thesis'.} once the PACE submission is complete.
 
 \begin{thebibliography}{99}
 
@@ -1250,7 +1267,7 @@ http://arxiv.org/abs/1404.6399.
 
 \bibitem{AutomatedSearchTree}
 J. Gramm, J. Guo, F. Hüffner, and R. Niedermeier, “Automated Generation of Search Tree Algorithms
-for Hard GraphModification Problems,” Algorithmica, vol. 39, no. 4, pp. 321–347, Aug. 2004, doi:
+for Hard Graph Modification Problems,” Algorithmica, vol. 39, no. 4, pp. 321–347, Aug. 2004, doi:
 10.1007/s00453-004-1090-5.
 
 \bibitem{BoeckerBaumbach}
