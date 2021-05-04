@@ -145,7 +145,17 @@ Co-Supervisor: Dr. Jens M. Schmidt
 
 \addchap{Acknowledgment}
 
-Some acknowledgments I still have to write at some point.
+I would like to thank my supervisors for this thesis, Prof. Dr. Mnich, and Dr. Schmidt. They
+suggested participation in the PACE challenge and provided a lot of good advice and ideas for the
+implementation. It was a challenging but interesting topic and I learned a lot while working on it.
+
+Additional gratitude goes to the Manke Förderstiftung Henstedt-Ulzburg, and especially Monika and
+Volker Manke, for the support I have received over the course of my studies at the TUHH.
+
+And last --- but very much not least --- I want to thank my friends and family for all of their
+support, as well as the opportunities to actually enjoy the time off from working on this
+thesis. The last year or so has not been easy on anyone, but it was immeasurably better because of
+all of you.
 
 \begin{flushright}
 	Sebastian Paarmann, Henstedt-Ulzburg
@@ -361,7 +371,7 @@ competitive, with different performance characteristics. Notably, good data redu
 FPT approach feasible even for graphs that require several thousand edge modifications, despite the
 worst-case running times.
 
-This basic approach was improved further by Böcker and Damaschke. First, Damschke introduced a
+This basic approach was improved further by Böcker and Damaschke. First, Damaschke introduced a
 theorem concerning the structure of graphs in which no edge is part of three conflict
 triples~\cite{BoundedDegree}. This was used to improve the search tree size to
 $O(1.76^k)$~\cite{EvenFaster}. Then zero-edges (which will be discussed in more detail later) can be
@@ -789,8 +799,8 @@ possibly satisfy the real condition and we can skip to the next edge. On other o
 then $uv$ will definitely satisfy the real condition and we can merge $uv$ without going through the
 dynamic programming steps. Lastly, we will point out that this description is slightly incomplete in
 the presence of weights that are $-\infty$. In that case the described procedure would lead to
-dynmic programming tables of infinite size which clearly cannot work. This can be solved by
-explicitly maintaing an extra entry for infinity in addition to the main table.
+dynamic programming tables of infinite size which clearly cannot work. This can be solved by
+explicitly maintaining an extra entry for infinity in addition to the main table.
 
 % TODO: This whole dynamic programming is still... meh. I *think* it's a bit better this way than
 % the description by Böcker et al., and at least it mentions infinities, but it's hardly perfect or
