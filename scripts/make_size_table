@@ -1,0 +1,19 @@
+#!/usr/bin/env fish
+
+# Parse command line args
+set argc (count $argv)
+if test "$argc" != 1
+	echo "Usage: make_solution_table <instance folder>"
+	exit 1
+else
+	set instance_folder "$argv[1]"
+end
+
+set instances (ls "$instance_folder/exact"* | sed -r 's/.*\/(exact.*)/\1/g')
+
+echo "file | vertex count"
+
+for instance in $instances
+	set size (sed -n "1p" "$instance_folder/$instance" | sed -r 's/p cep ([0-9]+) ([0-9]+)/\1/g')
+	echo "$instance | $size"
+end

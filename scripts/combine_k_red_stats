@@ -1,0 +1,18 @@
+#!/usr/bin/env fish
+
+# Parse command line args
+set argc (count $argv)
+if test "$argc" != 1
+	echo "Usage: combine_k_red_stats <stats_folder>"
+	exit 1
+else
+	set stats_folder "$argv[1]"
+end
+
+set instances (ls "$stats_folder/"*)
+
+echo (sed -n "1p" "$instances[1]")
+
+for i in (seq (count $instances))
+	echo (sed -n "2p" $instances[$i])
+end

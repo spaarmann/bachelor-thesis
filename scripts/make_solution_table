@@ -1,0 +1,30 @@
+#!/usr/bin/env fish
+
+# Parse command line args
+set argc (count $argv)
+if test "$argc" != 1
+	echo "Usage: make_solution_table <run>"
+	exit 1
+else
+	set run "$argv[1]"
+end
+
+echo "Solution Size table from run $run"
+
+if test -d "$run/runner_out/"
+	set log_dir "$run/runner_out"
+else
+	set log_dir "$run"
+end
+
+set instances (ls "$log_dir/"*.out | sed -r 's/.*\/(exact.*).out/\1/g')
+
+echo "file | edits"
+
+for instance in $instances
+	set edit_count (grep "Final set of " "$log_dir/$instance.out" | sed -r 's/.*Final set of ([0-9]+) de-duplicated edits.*/\1/g')
+	
+	if test "$edit_count" != ""
+		echo "$instance | $edit_count"
+	end
+end
